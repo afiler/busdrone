@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <meta charset="utf-8">
+  <title>busdrone</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    #map-canvas, #map_canvas {
+      height: 100%;
+    }
+
+    @media print {
+      html, body {
+        height: auto;
+      }
+
+      #map_canvas {
+        height: 650px;
+      }
+    }
+
+    #panel {
+      position: absolute;
+      top: 5px;
+      left: 50%;
+      margin-left: -180px;
+      z-index: 5;
+      background-color: #fff;
+      padding: 5px;
+      border: 1px solid #999;
+    }
+    
+    #logo {
+      padding: 10px 10px 0px 10px;
+    }
+    
+    #info {
+      position: absolute;
+      top: 0px;
+      right: 0px;
+      padding: 10px;
+      font-size: small;
+    }
+  </style>
+  <script src="https://maps.googleapis.com/maps/api/js?v=3.0&sensor=true"></script>
+  <script>
+    var wsUri = "ws://"+(document.location.hostname||"localhost")+":28737/";
+    var output;
+    var busMarkers = {};
+    var map;
+    var source, dest;
+    var fetchedOnce = false;
+    
+    var routeRenames = { 671: 'A', 672: 'B', 673: 'C', 674: 'D' };
+
+    function init() {
+      var myLatlng = new google.maps.LatLng(47.606395,-122.333136);
+      var mapOptions = {
+        zoom: 13,
+        center: myLatlng,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+      }
+      map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+
+      source = new Proj4js.Proj('EPSG:2285');
+      dest = new Proj4js.Proj('EPSG:4326');
+      
+      output = document.getElementById("output");
+      google.maps.event.addListenerOnce(map, 'tilesloaded', onMapReady);
+    }
+    
+    function onMapReady() {
+      websocket = new WebSocket(wsUri);
+      websocket.onopen = function(evt) { onOpen(evt) };
+      websocket.onclose = function(evt) { onClose(evt) };
+      websocket.onmessage = function(evt) { onMessage(evt) };
+      websocket.onerror = function(evt) { onError(evt) };
+      
+      window.setInterval(mapCleanup, 10000);
+    }
+    
+    function newBus(bus) {
+      //console.log("newBus: "+bus.route);
+      var busLatLng = new google.maps.LatLng(bus.lat, bus.lon);
+      //var directionColor = bus.dirTag && bus.dirTag.indexOf('OB') > -1 ? "7094FF" : "FF6262";
+      var directionColor = "7094FF";
+      var iconType = 'bus'; // bus.vtype == 'bus' ? 'bus' : 'locomotive';
+      //var marker = new google.maps.Marker({ icon: 'http://chart.googleapis.com/chart?chst=d_bubble_icon_text_small&chld=' + iconType + '|bbT|'+bus.route+' '+d.toLocaleTimeString()+'|' + directionColor + '|eee', position: busLatLng, map: map });
+      var marker = new google.maps.Marker({ icon: 'http://chart.googleapis.com/chart?chst=d_bubble_text_small&chld=bbT|'+bus.route+'|' + directionColor + '|eee', position: busLatLng, title: bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString(), map: map, zIndex: bus.coach, bus: bus });
+      busMarkers[bus.uid] = marker;
+    }
+        
+    function updateBus(bus) {
+      var p = new Proj4js.Point(bus.x, bus.y);
+      Proj4js.transform(source, dest, p);
+      bus.lat = p.y; bus.lon = p.x;
+      bus.uid = bus.coach;
+      
+      if (routeRenames[bus.route]) { bus.route = routeRenames[bus.route]; }
+      
+      var busMarker = busMarkers[bus.uid];
+      if (typeof busMarker === 'undefined') {
+        newBus(bus);
+      } else {
+        if (Math.abs(bus.x - busMarker.bus.x) + Math.abs(bus.y - busMarker.bus.y) < 1000 &&
+          !(document.hidden || document.webkitHidden || document.msHidden)) {
+          busMarker.animatedMoveTo(bus.lat, bus.lon);
+        } else {
+          //console.log("Moving "+bus.route);
+          busMarker.setPosition(new google.maps.LatLng(bus.lat, bus.lon));
+          /*var newMarker = new google.maps.Marker({ icon: 'http://chart.googleapis.com/chart?chst=d_bubble_text_small&chld=bbT|'+bus.route+'|' + directionColor + '|eee', position: busLatLng, title: bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString(), map: map, zIndex: bus.coach, bus: bus });
+          busMarkers[bus.uid] = newMarker;
+          map.removeOverlay(busMarker);
+          busMarker = newMarker;*/
+        }
+        
+        redrawBusMarker(busMarker);
+        busMarker.bus = bus;
+      }
+    }
+    
+    function mapCleanup() {
+      for(busMarkerId in busMarkers) {
+        busMarker = busMarkers[busMarkerId];
+        redrawBusMarker(busMarker);
+      }
+    }
+    
+    function redrawBusMarker(marker) {
+      bus = busMarker.bus;
+      age = (new Date() - bus.timestamp) / 1000;
+            
+      if (age > 60*5) {
+        busMarker.setVisible(false);
+        return;
+      }
+      
+      if (age > 60*2) color = "FF6262";
+      else color = "7094FF";
+      
+      iconString = 'http://chart.googleapis.com/chart?chst=d_bubble_text_small&chld=bbT|'+bus.route+'|' + color + '|eee';
+      title = bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString();
+      
+      if (iconString != busMarker.getIcon()) busMarker.setIcon(iconString);
+      if (title != busMarker.getTitle()) busMarker.setTitle(title);
+    }
+
+    function onOpen(evt) {
+    }
+
+    function onClose(evt) {
+    }
+
+    function onMessage(evt) {
+      //console.log(evt.data);
+      JSON.parse(evt.data).forEach(updateBus);
+      //updateBus(JSON.parse(evt.data));
+      
+      if (!fetchedOnce) {
+        fetchedOnce = true;
+        mapCleanup();
+      }
+    }
+
+    function onError(evt) {
+      console.log('ERROR: ' + evt.data);
+    }
+
+    window.addEventListener("load", init, false);
+  </script>
+</head>
+<body>
+  <img src="busdrone.png" id="logo" width="323" height="100">
+  <div id="info">
+    Data from <a href="http://www.its.washington.edu/projects/busview_overview.html">Busview</a><br/>
+    Inspired by <a href="http://firemet.aws.af.cm/">PDX Live Bus</a><br/>
+    <a href="https://twitter.com/busdrone" class="twitter-follow-button" data-show-count="false" data-dnt="true">Follow @busdrone</a>
+    <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+  </div>
+  
+  <div id="map-canvas"></div>
+  <div id="output"></div>
+
+  <script src="js/marker.js"></script>
+  <script src="js/proj4js-compressed.js"></script>
+  </body>
+</html>
