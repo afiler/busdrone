@@ -19,8 +19,17 @@
       padding: 0;
     }
 
-    #map-canvas, #map_canvas {
-      height: 100%;
+    #header {
+      height: 110px;
+    }
+
+    #map-canvas {
+        margin-top: 110px;
+        position:absolute; 
+        top: 0px; 
+        left: 0px;
+        right: 0px; 
+        bottom: 0px;
     }
 
     @media print {
@@ -28,7 +37,7 @@
         height: auto;
       }
 
-      #map_canvas {
+      #map-canvas {
         height: 650px;
       }
     }
@@ -55,11 +64,15 @@
       padding: 10px;
       font-size: small;
     }
+    
+    #info img {
+      display: inline-block; vertical-align: middle;
+    }
+    
   </style>
   <script src="https://maps.googleapis.com/maps/api/js?v=3.0&sensor=true"></script>
   <script>
     var wsUri = "ws://"+(document.location.hostname||"localhost")+":28737/";
-    var output;
     var busMarkers = {};
     var map;
     var source, dest;
@@ -79,7 +92,6 @@
       source = new Proj4js.Proj('EPSG:2285');
       dest = new Proj4js.Proj('EPSG:4326');
       
-      output = document.getElementById("output");
       google.maps.event.addListenerOnce(map, 'tilesloaded', onMapReady);
     }
     
@@ -184,18 +196,18 @@
   </script>
 </head>
 <body>
-  <img src="img/busdrone.png" id="logo" width="323" height="100">
-  <div id="info">
-    Data from <a href="http://www.its.washington.edu/projects/busview_overview.html">Busview</a><br/>
-    Inspired by <a href="http://firemet.aws.af.cm/">PDX Live Bus</a><br/>
-    Written by <a href="http://afiler.com/">Andrew Filer</a><br/>
-    Source <a href="https://github.com/afiler/busdrone/">on Github</a><br/>
-    <a href="https://twitter.com/busdrone" class="twitter-follow-button" data-show-count="false" data-dnt="true">Follow @busdrone</a>
-    <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
+  <div id="header">
+    <img src="img/busdrone.png" id="logo" width="323" height="100">
+    <div id="info">
+      Data from <a href="http://www.its.washington.edu/projects/busview_overview.html">Busview</a><br/>
+      Inspired by <a href="http://firemet.aws.af.cm/">PDX Live Bus</a><br/>
+      Written by <a href="http://afiler.com/">Andrew Filer</a><br/>
+      <a href="https://github.com/afiler/busdrone/"><img src="img/github-icon.png" width="16" height="16">Source on Github</a><br/>
+      <a href="https://twitter.com/busdrone" ><img src="img/twitter-icon.png" width="16" height="16">Follow @busdrone</a>
+    </div>
   </div>
-  
   <div id="map-canvas"></div>
-  <div id="output"></div>
+  
 
   <script src="js/marker.js"></script>
   <script src="js/proj4js-compressed.js"></script>
