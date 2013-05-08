@@ -9,6 +9,7 @@ as JSON objects through websockets. Objects are cached locally using Redis.
 ### Server
 * [Redis](http://redis.io)
 * [Jedis](https://github.com/xetorthio/jedis/)
+** [Apache Commons pool](http://commons.apache.org/proper/commons-pool/download_pool.cgi)
 * [json-io](http://code.google.com/p/json-io/)
 * [Java-WebSocket](https://github.com/TooTallNate/Java-WebSocket/)
 

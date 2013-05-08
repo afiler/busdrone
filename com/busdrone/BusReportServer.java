@@ -20,12 +20,14 @@ import java.net.URL;
 import java.util.Vector;
 
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+import redis.clients.jedis.JedisPoolConfig;
 
 import com.cedarsoftware.util.io.JsonWriter;
 
 public class BusReportServer extends WebSocketServer {
 	public static String endpointUrl = "http://trolley.its.washington.edu/applet/AvlServer";
-	public Jedis busReportDb;
+	public JedisPool jedisPool;
 
 	public static void main( String[] args ) throws InterruptedException , IOException {
 		WebSocketImpl.DEBUG = false;
@@ -81,12 +83,12 @@ public class BusReportServer extends WebSocketServer {
 	
 	public BusReportServer( int port ) throws UnknownHostException {
 		super( new InetSocketAddress( port ) );
-		busReportDb = new Jedis("localhost");
+		jedisPool = new JedisPool(new JedisPoolConfig(), "localhost");
 	}
 
 	public BusReportServer( InetSocketAddress address ) {
 		super( address );
-		busReportDb = new Jedis("localhost");
+		jedisPool = new JedisPool(new JedisPoolConfig(), "localhost");
 	}
 
 	@Override
@@ -107,16 +109,21 @@ public class BusReportServer extends WebSocketServer {
 				conn.send(busReportDb.get(key));
 			}
 		}*/
-		
-		StringBuilder builder = new StringBuilder();
-		builder.append("[");		
-		for (String key : busReportDb.hkeys("buses")) {
-			if (builder.length() > 1) builder.append(",");
-			builder.append(busReportDb.get(key));
-		}
-		builder.append("]");
-		synchronized (conn) {
-			conn.send(builder.toString());
+
+		Jedis busReportDb = jedisPool.getResource();
+		try {	
+			StringBuilder builder = new StringBuilder();
+			builder.append("[");		
+			for (String key : busReportDb.hkeys("buses")) {
+				if (builder.length() > 1) builder.append(",");
+				builder.append(busReportDb.get(key));
+			}
+			builder.append("]");
+			synchronized (conn) {
+				conn.send(builder.toString());
+			}
+		} finally {
+			jedisPool.returnResource(busReportDb);
 		}
 	}
 
