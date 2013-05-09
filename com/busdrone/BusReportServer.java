@@ -9,6 +9,11 @@ import org.java_websocket.WebSocket;
 import org.java_websocket.WebSocketImpl;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
+import org.osgeo.proj4j.CRSFactory;
+import org.osgeo.proj4j.CoordinateReferenceSystem;
+import org.osgeo.proj4j.CoordinateTransform;
+import org.osgeo.proj4j.CoordinateTransformFactory;
+import org.osgeo.proj4j.ProjCoordinate;
 
 import its.app.busview.BusReport;
 import its.app.busview.BusReportSet;
@@ -27,7 +32,15 @@ import com.cedarsoftware.util.io.JsonWriter;
 
 public class BusReportServer extends WebSocketServer {
 	public static String endpointUrl = "http://trolley.its.washington.edu/applet/AvlServer";
-	public JedisPool jedisPool;
+	public JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost");
+	
+	static final String WGS84_PARAM = "+title=long/lat:WGS84 +proj=longlat +datum=WGS84 +units=degrees";
+	static final String WA_N_PARAM = "+proj=lcc +lat_1=48.73333333333333 +lat_2=47.5 +lat_0=47 +lon_0=-120.8333333333333 +x_0=500000.0001016001 +y_0=0 +ellps=GRS80 +datum=NAD83 +to_meter=0.3048006096012192 +no_defs";
+	private static final CoordinateTransformFactory ctFactory = new CoordinateTransformFactory();
+	private static final CRSFactory crsFactory = new CRSFactory();
+	private static final CoordinateReferenceSystem WGS84 = crsFactory.createFromParameters("WGS84", WGS84_PARAM);
+	private static final CoordinateReferenceSystem WA_N = crsFactory.createFromParameters("WA_N", WA_N_PARAM);
+	private static final CoordinateTransform trans = ctFactory.createTransform(WA_N, WGS84);
 
 	public static void main( String[] args ) throws InterruptedException , IOException {
 		WebSocketImpl.DEBUG = false;
@@ -44,7 +57,9 @@ public class BusReportServer extends WebSocketServer {
 		InputStream response = connection.getInputStream();
 		ObjectInputStream ois = new ObjectInputStream(response);
 		
-		Jedis busReportDb = new Jedis("localhost");
+		Jedis db = new Jedis("localhost");
+		
+		ProjCoordinate pout = new ProjCoordinate();
 
 		while(true) {
 			try {
@@ -55,14 +70,19 @@ public class BusReportServer extends WebSocketServer {
 					if (busReports != null) {
 						//String json = JsonWriter.objectToJson(busReports.toArray());
 						//s.sendToAll(json);
-						s.sendToAll(JsonWriter.objectToJson(busReports.toArray()));
+						//s.sendToAll(JsonWriter.objectToJson(busReports.toArray()));
 						for (BusReport busReport : busReports) {
+							trans.transform(new ProjCoordinate(busReport.x, busReport.y), pout);
+							busReport.lat = pout.y;
+							busReport.lon = pout.x;
+							
 							String json = JsonWriter.objectToJson(busReport);
 							//s.sendToAll(json);
 							String key = String.valueOf(busReport.coach);
-							busReportDb.set(key, json);
-							busReportDb.hset("buses", key, String.valueOf(busReport.timestamp));
+							db.set(key, json);
+							db.hset("buses", key, String.valueOf(busReport.timestamp));
 						}
+						s.sendToAll(JsonWriter.objectToJson(busReports.toArray()));
 					}
 				}
 			} catch (ClassNotFoundException e) {
@@ -83,12 +103,10 @@ public class BusReportServer extends WebSocketServer {
 	
 	public BusReportServer( int port ) throws UnknownHostException {
 		super( new InetSocketAddress( port ) );
-		jedisPool = new JedisPool(new JedisPoolConfig(), "localhost");
 	}
 
 	public BusReportServer( InetSocketAddress address ) {
 		super( address );
-		jedisPool = new JedisPool(new JedisPoolConfig(), "localhost");
 	}
 
 	@Override
@@ -110,20 +128,20 @@ public class BusReportServer extends WebSocketServer {
 			}
 		}*/
 
-		Jedis busReportDb = jedisPool.getResource();
+		Jedis db = jedisPool.getResource();
 		try {	
 			StringBuilder builder = new StringBuilder();
 			builder.append("[");		
-			for (String key : busReportDb.hkeys("buses")) {
+			for (String key : db.hkeys("buses")) {
 				if (builder.length() > 1) builder.append(",");
-				builder.append(busReportDb.get(key));
+				builder.append(db.get(key));
 			}
 			builder.append("]");
 			synchronized (conn) {
 				conn.send(builder.toString());
 			}
 		} finally {
-			jedisPool.returnResource(busReportDb);
+			jedisPool.returnResource(db);
 		}
 	}
 

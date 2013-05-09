@@ -21,6 +21,9 @@ public class BusReport
   public short direction;
   static final long serialVersionUID = -7892157182165587445L;
   
+  public double lat;
+  public double lon;
+  
   public void writeExternal(ObjectOutput paramObjectOutput)
     throws IOException
   {
