@@ -102,10 +102,10 @@
     
     function onMapReady() {
       websocket = new WebSocket(wsUri);
-      websocket.onopen = function(evt) { onOpen(evt) };
-      websocket.onclose = function(evt) { onClose(evt) };
       websocket.onmessage = function(evt) { onMessage(evt) };
       websocket.onerror = function(evt) { onError(evt) };
+      
+      // http://www.wsdot.com/ferries/vesselwatch/Vessels.ashx
       
       window.setInterval(mapCleanup, 10000);
       google.maps.event.addListener(map, 'zoom_changed', mapCleanup);
@@ -115,16 +115,46 @@
       //console.log("newBus: "+bus.route);
       var busLatLng = new google.maps.LatLng(bus.lat, bus.lon);
       var symbol = routeIcon(bus.route, 'rgba(112,148,255,0.8)', map.getZoom());
-      var marker = new google.maps.Marker({ icon: symbol, position: busLatLng, title: bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString(), map: map, zIndex: bus.coach, bus: bus });
+      var marker = new google.maps.Marker({ icon: symbol, position: busLatLng, title: bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString(), map: map, zIndex: parseInt(bus.coach) || 10000, bus: bus });
       busMarkers[bus.uid] = marker;
     }
-        
-    function updateBus(bus) {
+    //"COM.NextBus.HttpMapClient.ResponseComponent"
+    //"its.app.busview.BusReport"
+
+    function onMessage(evt) {
+      var data = JSON.parse(evt.data);
+      data.forEach(updateBus);
+      
+      if (!fetchedOnce) {
+        fetchedOnce = true;
+        mapCleanup();
+      }
+    }
+
+    var busReportAdapters = {
+      "COM.NextBus.Predictor2Comm.BusReport": function(bus) {
+        //console.log(bus);
+        bus.route = 'SLU';
+        bus.coach = 'SLU'+bus._busID;
+        bus.lat = bus._location._latitudeInTenMillionths / 10000000;
+        bus.lon = bus._location._longitudeInTenMillionths / 10000000;
+        bus.direction = bus._heading;
+        bus.timestamp = bus._gpsTime;
+        return bus;
+      },
+      
       /* if (!(bus.lat && bus.lon)) {
         var p = new Proj4js.Point(bus.x, bus.y);
         Proj4js.transform(source, dest, p);
         bus.lat = p.y; bus.lon = p.x;
       } */
+    }
+        
+    function updateBus(bus) {
+      if (busReportAdapters[bus['@type']]) {
+        bus = busReportAdapters[bus['@type']](bus);
+      }
+
       bus.uid = bus.coach;
       
       if (routeRenames[bus.route]) { bus.route = routeRenames[bus.route]; }
@@ -170,49 +200,21 @@
       if (iconString != busMarker.getIcon()) busMarker.setIcon(iconString);
       if (title != busMarker.getTitle()) busMarker.setTitle(title);
     }
-
-    function onOpen(evt) {
-    }
-
-    function onClose(evt) {
-    }
-
-    function onMessage(evt) {
-      //console.log(evt.data);
-      JSON.parse(evt.data).forEach(updateBus);
-      //updateBus(JSON.parse(evt.data));
-      
-      if (!fetchedOnce) {
-        fetchedOnce = true;
-        mapCleanup();
-      }
-    }
     
     
     function roundedRect(ctx,x,y,width,height,radius,fill,stroke) {
-        ctx.save();	// save the context so we don't mess up others
+        ctx.save();
         ctx.beginPath();
-
-        // draw top and top right corner
         ctx.moveTo(x+radius,y);
         ctx.arcTo(x+width,y,x+width,y+radius,radius);
-
-        // draw right side and bottom right corner
         ctx.arcTo(x+width,y+height,x+width-radius,y+height,radius); 
-
-        // draw bottom and bottom left corner
         ctx.arcTo(x,y+height,x,y+height-radius,radius);
-
-        // draw left and top left corner
         ctx.arcTo(x,y,x+radius,y,radius);
 
-        if(fill){
-          ctx.fill();
-        }
-        if(stroke){
-          ctx.stroke();
-        }
-        ctx.restore();	// restore context to what it was on entry
+        if (fill) ctx.fill();
+        if (stroke) ctx.stroke();
+
+        ctx.restore();
     }
     
     function routeIcon(route, color, zoom) {
@@ -230,16 +232,16 @@
       context.fillStyle='white';
       context.font = sizes.text+'pt Lato';
       context.textAlign = 'center';
-      context.fillText(route, sizes.width/2, sizes.height*0.75);
+      context.fillText(route, sizes.width/2, sizes.baseline);
       
       routeIcons[tag] = canvas.toDataURL();
       return routeIcons[tag];
     }
     
     function getShieldSizes(zoom) {
-      if (zoom <= 13) return {width: 20, height: 10, cornerRadius: 3, text: 7};
-      if (zoom <= 14) return {width: 25, height: 15, cornerRadius: 4, text: 10};
-      return {width: 30, height: 20, cornerRadius: 5, text: 12};
+      if (zoom <= 13) return {width: 20, height: 10, cornerRadius: 3, text: 7, baseline: 8};
+      if (zoom <= 14) return {width: 25, height: 15, cornerRadius: 4, text: 10, baseline: 12};
+      return {width: 30, height: 20, cornerRadius: 5, text: 12, baseline: 15};
     }
     
     function getShieldCanvas(color, width, height, cornerRadius) {
