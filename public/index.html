@@ -84,7 +84,7 @@
     
     var shieldCanvases = {};
     var routeIcons = {};
-
+    
     function init() {
       var myLatlng = new google.maps.LatLng(47.606395,-122.333136);
       var mapOptions = {
@@ -94,9 +94,6 @@
       }
       map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
 
-      //source = new Proj4js.Proj('EPSG:2285');
-      //dest = new Proj4js.Proj('EPSG:4326');
-      
       google.maps.event.addListenerOnce(map, 'tilesloaded', onMapReady);
     }
     
@@ -105,8 +102,6 @@
       websocket.onmessage = function(evt) { onMessage(evt) };
       websocket.onerror = function(evt) { onError(evt) };
       
-      // http://www.wsdot.com/ferries/vesselwatch/Vessels.ashx
-      
       window.setInterval(mapCleanup, 10000);
       google.maps.event.addListener(map, 'zoom_changed', mapCleanup);
     }
@@ -114,7 +109,7 @@
     function newBus(bus) {
       //console.log("newBus: "+bus.route);
       var busLatLng = new google.maps.LatLng(bus.lat, bus.lon);
-      var symbol = routeIcon(bus.route, 'rgba(112,148,255,0.8)', map.getZoom());
+      var symbol = routeIcon(bus.route, bus.normalColor, map.getZoom());
       var marker = new google.maps.Marker({ icon: symbol, position: busLatLng, title: bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString(), map: map, zIndex: parseInt(bus.coach) || 10000, bus: bus });
       busMarkers[bus.uid] = marker;
     }
@@ -123,31 +118,58 @@
 
     function onMessage(evt) {
       var data = JSON.parse(evt.data);
-      data.forEach(updateBus);
+
+      var identifier = data['@type'] || data['appurl'];
+      if (feedAdapters[identifier]) {
+        feedAdapters[identifier](data);
+      } else {
+        data.forEach(updateBus);
+      }
       
       if (!fetchedOnce) {
         fetchedOnce = true;
         mapCleanup();
       }
     }
+    
+    var feedAdapters = {
+      "http://www.wsdot.wa.gov/ferries/vesselwatch": function(data) {
+        data.vessellist.forEach(function(bus) {
+          bus.coach = 'WSF'+bus.vesselID;
+          bus.direction = bus.head;
+          bus.normalColor = 'rgba(1,115,89,0.8)';
+          if (bus.inservice == 'True') {
+            updateBus(bus);
+          } else {
+            deleteBus(bus);
+          }
+        });
+      }
+    }
 
     var busReportAdapters = {
       "COM.NextBus.Predictor2Comm.BusReport": function(bus) {
-        //console.log(bus);
         bus.route = 'SLU';
         bus.coach = 'SLU'+bus._busID;
         bus.lat = bus._location._latitudeInTenMillionths / 10000000;
         bus.lon = bus._location._longitudeInTenMillionths / 10000000;
         bus.direction = bus._heading;
         bus.timestamp = bus._gpsTime;
+        
+        if (bus._busID == "1") bus.normalColor = 'rgba(255,0,0,0.8)';
+        else if (bus._busID == "3") bus.normalColor = 'rgba(127,0,255,0.8)';
+        
         return bus;
       },
-      
-      /* if (!(bus.lat && bus.lon)) {
-        var p = new Proj4js.Point(bus.x, bus.y);
-        Proj4js.transform(source, dest, p);
-        bus.lat = p.y; bus.lon = p.x;
-      } */
+      "its.app.busview.BusReport": function(bus) {
+        bus.normalColor = 'rgba(112,148,255,0.8)';
+        return bus;
+      }
+    }
+    
+    function deleteBus(bus) {
+      var busMarker = busMarkers[bus.uid];
+      if (busMarker) map.removeOverlay(busMarker);
     }
         
     function updateBus(bus) {
@@ -163,26 +185,27 @@
       if (typeof busMarker === 'undefined') {
         newBus(bus);
       } else {
-        if (Math.abs(bus.x - busMarker.bus.x) + Math.abs(bus.y - busMarker.bus.y) < 1000 &&
+        var oldBus = busMarker.bus;
+        busMarker.bus = bus;
+        redrawBusMarker(busMarker);
+
+        if (Math.abs(bus.x - oldBus.x) + Math.abs(bus.y - oldBus.y) < 1000 &&
           !(document.hidden || document.webkitHidden || document.msHidden)) {
           busMarker.animatedMoveTo(bus.lat, bus.lon);
         } else {
           busMarker.setPosition(new google.maps.LatLng(bus.lat, bus.lon));
         }
         
-        redrawBusMarker(busMarker);
-        busMarker.bus = bus;
       }
     }
     
     function mapCleanup() {
       for(busMarkerId in busMarkers) {
-        busMarker = busMarkers[busMarkerId];
-        redrawBusMarker(busMarker);
+        redrawBusMarker(busMarkers[busMarkerId]);
       }
     }
     
-    function redrawBusMarker(marker) {
+    function redrawBusMarker(busMarker) {
       bus = busMarker.bus;
       age = (new Date() - bus.timestamp) / 1000;
             
@@ -192,7 +215,7 @@
       }
       
       if (age > 60*2) color = 'rgba(127,127,127,0.8)';
-      else color = 'rgba(112,148,255,0.8)';
+      else color = bus.normalColor;
       
       var iconString = routeIcon(bus.route, color, map.getZoom());
       title = bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString();
@@ -221,7 +244,7 @@
       var tag = [route, color, zoom].join(',');
       if (routeIcons[tag]) return routeIcons[tag];
 
-      var sizes = getShieldSizes(zoom);
+      var sizes = getShieldSizes(zoom, route.toString().length);
       var shieldCanvas = getShieldCanvas(color, sizes.width, sizes.height, sizes.cornerRadius);
       var canvas = document.createElement('canvas');
       canvas.width = sizes.width; canvas.height = sizes.height;
@@ -238,10 +261,12 @@
       return routeIcons[tag];
     }
     
-    function getShieldSizes(zoom) {
-      if (zoom <= 13) return {width: 20, height: 10, cornerRadius: 3, text: 7, baseline: 8};
-      if (zoom <= 14) return {width: 25, height: 15, cornerRadius: 4, text: 10, baseline: 12};
-      return {width: 30, height: 20, cornerRadius: 5, text: 12, baseline: 15};
+    function getShieldSizes(zoom, textLength) {
+      var widthMult = textLength > 3 ? 1.0 + (textLength-3)/3 : 1.0;
+      
+      if (zoom <= 13) return {width: 20*widthMult, height: 10, cornerRadius: 3, text: 7, baseline: 8};
+      if (zoom <= 14) return {width: 25*widthMult, height: 15, cornerRadius: 4, text: 10, baseline: 12};
+      return {width: 30*widthMult, height: 20, cornerRadius: 5, text: 12, baseline: 15};
     }
     
     function getShieldCanvas(color, width, height, cornerRadius) {

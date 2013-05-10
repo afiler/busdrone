@@ -31,11 +31,9 @@ public class BusReportServer extends WebSocketServer {
 		s.start();
 		System.out.println( "Server started on port " + s.getPort() );
 		
-		NextBusFetcher nextBusFetcher = new NextBusFetcher(s);
-		nextBusFetcher.start();
-
-		BusViewFetcher busViewFetcher = new BusViewFetcher(s);
-		busViewFetcher.start();
+		new NextBusFetcher(s).start();
+		new BusViewFetcher(s).start();
+		new WSFerryFetcher(s).start();
 	}
 
 	public void sendToAll( String text ) {
@@ -87,6 +85,7 @@ public class BusReportServer extends WebSocketServer {
 			synchronized (conn) {
 				conn.send(builder.toString());
 				conn.send(db.get("nextbus"));
+				conn.send(db.get("wsferry"));
 			}
 		} finally {
 			jedisPool.returnResource(db);

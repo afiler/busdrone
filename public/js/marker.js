@@ -12,7 +12,7 @@ google.maps.Marker.prototype.animatedMoveTo = function(toLat, toLng) {
     
   // store a LatLng for each step of the animation
   var frames = [];
-  for (var percent = 0; percent < 1; percent += 0.005) {
+  for (var percent = 0; percent < 1; percent += 0.05) {
     curLat = fromLat + percent * (toLat - fromLat);
     curLng = fromLng + percent * (toLng - fromLng);
     frames.push(new google.maps.LatLng(curLat, curLng));
