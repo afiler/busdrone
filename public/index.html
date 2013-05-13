@@ -73,10 +73,11 @@
     
   </style>
   <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=true"></script>
+  <script src="js/geoxml3.js"></script>
   <script>
     var wsUri = "ws://"+(document.location.hostname||"localhost")+":28737/";
     var busMarkers = {};
-    var map;
+    var map, geoXml;
     var source, dest;
     var fetchedOnce = false;
     
@@ -93,7 +94,8 @@
         mapTypeId: google.maps.MapTypeId.ROADMAP
       }
       map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
-
+      geoXml = new geoXML3.parser({map: map});
+      
       google.maps.event.addListenerOnce(map, 'tilesloaded', onMapReady);
     }
     
@@ -104,6 +106,7 @@
       
       window.setInterval(mapCleanup, 10000);
       google.maps.event.addListener(map, 'zoom_changed', mapCleanup);
+      google.maps.event.addListener(map, 'click', clearTrips);
     }
     
     function newBus(bus) {
@@ -112,6 +115,9 @@
       var symbol = routeIcon(bus.route, bus.normalColor, map.getZoom());
       var marker = new google.maps.Marker({ icon: symbol, position: busLatLng, title: bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString(), map: map, zIndex: parseInt(bus.coach) || 10000, bus: bus });
       busMarkers[bus.uid] = marker;
+      google.maps.event.addListener(marker, 'click', function() {
+        highlightTrip(marker.bus);
+      });
     }
     //"COM.NextBus.HttpMapClient.ResponseComponent"
     //"its.app.busview.BusReport"
@@ -224,6 +230,14 @@
       if (title != busMarker.getTitle()) busMarker.setTitle(title);
     }
     
+    function highlightTrip(bus) {
+      clearTrips();
+      geoXml.parse('kml/kcmetro/'+bus.route+'.kml');
+    }
+    
+    function clearTrips() {
+      geoXml.docs.forEach(function(doc) { geoXml.hideDocument(doc); });
+    }
     
     function roundedRect(ctx,x,y,width,height,radius,fill,stroke) {
         ctx.save();
