@@ -85,6 +85,7 @@
     
     var shieldCanvases = {};
     var routeIcons = {};
+    var arrowIcons = {};
     
     function init() {
       var myLatlng = new google.maps.LatLng(47.606395,-122.333136);
@@ -113,11 +114,11 @@
       //console.log("newBus: "+bus.route);
       if (bus.route == 'null') return;
       var busLatLng = new google.maps.LatLng(bus.lat, bus.lon);
-      var symbol = routeIcon(bus.route, bus.normalColor, map.getZoom());
+      var symbol = routeIcon(bus.route, bus.normalColor, map.getZoom(), bus.heading);
       var marker = new google.maps.Marker({ icon: symbol, position: busLatLng, title: bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString(), map: map, zIndex: parseInt(bus.coach) || 10000, bus: bus });
       busMarkers[bus.uid] = marker;
       google.maps.event.addListener(marker, 'click', function() {
-        //console.log(marker.bus);
+        console.log(marker.bus);
         highlightTrip(marker.bus);
       });
     }
@@ -146,8 +147,8 @@
       "http://www.wsdot.wa.gov/ferries/vesselwatch": function(data) {
         data.vessellist.forEach(function(bus) {
           bus.coach = 'WSF'+bus.vesselID;
-          bus.direction = bus.head;
-          bus.normalColor = 'rgba(1,115,89,0.8)';
+          bus.heading = bus.head;
+          bus.normalColor = 'rgba(1,115,89,0.7)';
           if (bus.inservice == 'True') {
             updateBus(bus);
           } else {
@@ -166,22 +167,22 @@
         bus.direction = bus._heading;
         bus.timestamp = bus._gpsTime;
         
-        if (bus._busID == "1") bus.normalColor = 'rgba(255,0,0,0.8)';
-        else if (bus._busID == "3") bus.normalColor = 'rgba(127,0,255,0.8)';
+        if (bus._busID == "1") bus.normalColor = 'rgba(255,0,0,0.7)';
+        else if (bus._busID == "3") bus.normalColor = 'rgba(127,0,255,0.7)';
         
         return bus;
       },
       
       "com.busdrone.BusReport": function(bus) {
         bus.coach = bus.vehicleId;
-        bus.normalColor = 'rgba(112,148,255,0.8)';
+        bus.normalColor = 'rgba(112,148,255,0.7)';
         //bus.normalColor = 'rgba(255,0,0,0.8)';
         //console.log(bus);
         return bus;
       },
       
       "its.app.busview.BusReport": function(bus) {
-        bus.normalColor = 'rgba(112,148,255,0.8)';
+        bus.normalColor = 'rgba(112,148,255,0.7)';
         return bus;
       }
     }
@@ -236,7 +237,7 @@
       if (age > 60*3.5) color = 'rgba(127,127,127,0.8)';
       else color = bus.normalColor;
       
-      var iconString = routeIcon(bus.route, color, map.getZoom());
+      var iconString = routeIcon(bus.route, color, map.getZoom(), bus.heading);
       title = bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString();
       
       if (iconString != busMarker.getIcon()) busMarker.setIcon(iconString);
@@ -267,9 +268,9 @@
         ctx.restore();
     }
     
-    function routeIcon(route, color, zoom) {
+    function routeIcon(route, color, zoom, heading) {
       var tag = [route, color, zoom].join(',');
-      if (routeIcons[tag]) return routeIcons[tag];
+      //if (routeIcons[tag]) return routeIcons[tag];
 
       var sizes = getShieldSizes(zoom, route.toString().length);
       var shieldCanvas = getShieldCanvas(color, sizes.width, sizes.height, sizes.cornerRadius);
@@ -277,7 +278,12 @@
       canvas.width = sizes.width; canvas.height = sizes.height;
       
       var context = canvas.getContext('2d');
+
+      if (typeof(heading) != 'undefined')
+        context.drawImage(getArrow(heading, 'black', sizes.width, sizes.height), 0, 0);
+      
       context.drawImage(shieldCanvas, 0, 0);
+      
       
       context.fillStyle='white';
       context.font = sizes.text+'pt Lato';
@@ -310,8 +316,37 @@
       
       return canvas;
     }
-    
-    
+
+    function getArrow(heading, color, width, height) {
+      var tag = [heading, color, width, height].join(',');
+      if (arrowIcons[tag]) return arrowIcons[tag];
+      
+      var canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      
+      var context = canvas.getContext('2d');
+      //context.strokeRect(0, 0, width, height);
+      context.translate(canvas.width / 2, canvas.height / 2);
+      context.rotate(Math.PI*2*((heading+270)%360/360));
+      //context.strokeRect(0, 0, width, height);
+
+      context.beginPath();
+      
+      var tipX = width*0.5;
+      var midX = 0;
+      var backX = 0-width*0.5;
+      var topY = 0-height*0.5;
+      var midY = 0;
+      var btmY = height*0.5;
+      
+      context.moveTo(tipX, midY);
+      context.lineTo(backX, topY);
+      context.lineTo(midX, midY);
+      context.lineTo(backX, btmY);
+      context.fill();
+            
+      return canvas;
+    }
 
     function onError(evt) {
       console.log('ERROR: ' + evt.data);

@@ -18,7 +18,7 @@ public class BusReport
   public int dest;
   public int x;
   public int y;
-  public short direction;
+  public short heading;
   static final long serialVersionUID = -7892157182165587445L;
   
   public double lat;
@@ -35,7 +35,7 @@ public class BusReport
     paramObjectOutput.writeInt(this.dest);
     paramObjectOutput.writeInt(this.x);
     paramObjectOutput.writeInt(this.y);
-    paramObjectOutput.writeShort(this.direction);
+    paramObjectOutput.writeShort(this.heading);
   }
 
   public void readExternal(ObjectInput paramObjectInput)
@@ -49,6 +49,6 @@ public class BusReport
     this.dest = paramObjectInput.readInt();
     this.x = paramObjectInput.readInt();
     this.y = paramObjectInput.readInt();
-    this.direction = paramObjectInput.readShort();
+    this.heading = paramObjectInput.readShort();
   }
 }
