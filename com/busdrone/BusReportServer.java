@@ -34,6 +34,7 @@ public class BusReportServer extends WebSocketServer {
 		new NextBusFetcher(s).start();
 		new BusViewFetcher(s).start();
 		new WSFerryFetcher(s).start();
+		new OBAFetcher(s).start();
 	}
 
 	public void sendToAll( String text ) {
@@ -86,6 +87,7 @@ public class BusReportServer extends WebSocketServer {
 				conn.send(builder.toString());
 				conn.send(db.get("nextbus"));
 				conn.send(db.get("wsferry"));
+				conn.send(db.get("com.busdrone.reports.onebusaway"));
 			}
 		} finally {
 			jedisPool.returnResource(db);

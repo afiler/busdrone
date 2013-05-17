@@ -81,7 +81,7 @@
     var source, dest;
     var fetchedOnce = false;
     
-    var routeRenames = { 671: 'A', 672: 'B', 673: 'C', 674: 'D' };
+    var routeRenames = { 671: 'A', 672: 'B', 673: 'C', 674: 'D', 'A Line': 'A', 'B Line': 'B', 'C Line': 'C', 'D Line': 'D' };
     
     var shieldCanvases = {};
     var routeIcons = {};
@@ -111,11 +111,13 @@
     
     function newBus(bus) {
       //console.log("newBus: "+bus.route);
+      if (bus.route == 'null') return;
       var busLatLng = new google.maps.LatLng(bus.lat, bus.lon);
       var symbol = routeIcon(bus.route, bus.normalColor, map.getZoom());
       var marker = new google.maps.Marker({ icon: symbol, position: busLatLng, title: bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString(), map: map, zIndex: parseInt(bus.coach) || 10000, bus: bus });
       busMarkers[bus.uid] = marker;
       google.maps.event.addListener(marker, 'click', function() {
+        //console.log(marker.bus);
         highlightTrip(marker.bus);
       });
     }
@@ -124,6 +126,8 @@
 
     function onMessage(evt) {
       var data = JSON.parse(evt.data);
+      //if (data.items) data = data.items;
+      //console.log(evt.data.length + ' bytes, ' + data.length + ' items');
 
       var identifier = data['@type'] || data['appurl'];
       if (feedAdapters[identifier]) {
@@ -167,6 +171,15 @@
         
         return bus;
       },
+      
+      "com.busdrone.BusReport": function(bus) {
+        bus.coach = bus.vehicleId;
+        bus.normalColor = 'rgba(112,148,255,0.8)';
+        //bus.normalColor = 'rgba(255,0,0,0.8)';
+        //console.log(bus);
+        return bus;
+      },
+      
       "its.app.busview.BusReport": function(bus) {
         bus.normalColor = 'rgba(112,148,255,0.8)';
         return bus;
@@ -220,7 +233,7 @@
         return;
       }
       
-      if (age > 60*2) color = 'rgba(127,127,127,0.8)';
+      if (age > 60*3.5) color = 'rgba(127,127,127,0.8)';
       else color = bus.normalColor;
       
       var iconString = routeIcon(bus.route, color, map.getZoom());
