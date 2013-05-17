@@ -118,7 +118,7 @@
       var marker = new google.maps.Marker({ icon: symbol, position: busLatLng, title: bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString(), map: map, zIndex: parseInt(bus.coach) || 10000, bus: bus });
       busMarkers[bus.uid] = marker;
       google.maps.event.addListener(marker, 'click', function() {
-        console.log(marker.bus);
+        //console.log(marker.bus);
         highlightTrip(marker.bus);
       });
     }

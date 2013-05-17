@@ -7,6 +7,7 @@ public class BusReport {
 	String tripId;
 	double lat;
 	double lon;
+	double heading;
 	long timestamp;
 	
 
@@ -21,6 +22,7 @@ public class BusReport {
 			this.route     == that.route &&
 			this.tripId    == that.tripId &&
 			Double.doubleToLongBits(this.lat) == Double.doubleToLongBits(that.lat) &&
-			Double.doubleToLongBits(this.lon) == Double.doubleToLongBits(that.lon));
+			Double.doubleToLongBits(this.lon) == Double.doubleToLongBits(that.lon) &&
+			Double.doubleToLongBits(this.heading) == Double.doubleToLongBits(that.heading));
 	}
 }
