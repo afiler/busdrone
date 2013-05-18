@@ -31,7 +31,7 @@ public class BusReportServer extends WebSocketServer {
 		s.start();
 		System.out.println( "Server started on port " + s.getPort() );
 		
-		new NextBusFetcher(s).start();
+		//new NextBusFetcher(s).start();
 		new BusViewFetcher(s).start();
 		new WSFerryFetcher(s).start();
 		new OBAFetcher(s).start();
