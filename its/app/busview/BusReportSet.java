@@ -11,7 +11,7 @@ import java.util.Vector;
 public class BusReportSet
   implements Externalizable
 {
-  private long number;
+  public long timestamp;
   public Vector array;
   static final long serialVersionUID = 4476752156644304612L;
 
@@ -22,7 +22,7 @@ public class BusReportSet
   public void writeExternal(ObjectOutput o)
     throws IOException
   {
-    o.writeLong(this.number);
+    o.writeLong(this.timestamp);
     if (this.array == null)
     {
       o.writeObject(null);
@@ -38,7 +38,7 @@ public class BusReportSet
   public void readExternal(ObjectInput o)
     throws IOException
   {
-	this.number = o.readLong();
+	this.timestamp = o.readLong();
     try
     {
       BusReport[] busReports = (BusReport[])o.readObject();

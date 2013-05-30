@@ -53,27 +53,24 @@ public class BusViewFetcher extends Fetcher {
 		}
 		
 		Object o = ois.readObject();
-		if ((o instanceof BusReportSet)) {
-			BusReportSet set = (BusReportSet) o;
-			Vector<BusReport> busReports = set.array();
-			if (busReports != null) {
-				//String json = JsonWriter.objectToJson(busReports.toArray());
-				//s.sendToAll(json);
-				//s.sendToAll(JsonWriter.objectToJson(busReports.toArray()));
-				for (BusReport busReport : busReports) {
-					trans.transform(new ProjCoordinate(busReport.x, busReport.y), pout);
-					busReport.lat = pout.y;
-					busReport.lon = pout.x;
-					
-					String json = JsonWriter.objectToJson(busReport);
-					//s.sendToAll(json);
-					String key = String.valueOf(busReport.coach);
-					db.set(key, json);
-					db.hset("buses", key, String.valueOf(busReport.timestamp));
-				}
-				server.sendToAll(JsonWriter.objectToJson(busReports.toArray()));
-			}
+		if (!(o instanceof BusReportSet)) return;
+		BusReportSet set = (BusReportSet) o;
+		Vector<BusReport> busReports = set.array();
+		if (busReports == null) return;
+
+		for (BusReport busReport : busReports) {
+			trans.transform(new ProjCoordinate(busReport.x, busReport.y), pout);
+			busReport.lat = pout.y;
+			busReport.lon = pout.x;
+			
+			String json = JsonWriter.objectToJson(busReport);
+			//s.sendToAll(json);
+			String key = String.valueOf(busReport.coach);
+			db.set(key, json);
+			db.hset("buses", key, String.valueOf(busReport.timestamp));
 		}
+		server.sendToAll(JsonWriter.objectToJson(busReports.toArray()));
+		//System.out.println("BusReport number: "+set.timestamp+" size: "+busReports.toArray().length);
 	}
 
 }

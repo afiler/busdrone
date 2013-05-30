@@ -14,4 +14,4 @@ as JSON objects through websockets. Objects are cached locally using Redis.
 * [Java-WebSocket](https://github.com/TooTallNate/Java-WebSocket/)
 
 ### Client
-* [proj4js](http://trac.osgeo.org/proj4js/)
+* [jQuery](http://jquery.com/) (linked)

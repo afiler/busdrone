@@ -11,11 +11,12 @@
   <link rel="apple-touch-icon" sizes="114x114" href="img/touch-icon-iphone-retina.png" />
   <link rel="apple-touch-icon" sizes="144x144" href="img/touch-icon-ipad-retina.png" />
   
-  <link rel="stylesheet" href="css/jquery.sidr.light.css">
-  <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
-  <script src="js/jquery.sidr.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
   
   <link href='http://fonts.googleapis.com/css?family=Lato:300' rel='stylesheet' type='text/css'>
+  
+  <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+  <script src="bootstrap/js/bootstrap.min.js"></script>
   
   <title>busdrone</title>
   <style>
@@ -66,6 +67,10 @@
     #map-canvas {
       width: 100%;
       height: 100%;
+    }
+    
+    #map-canvas img {
+      max-width: none;
     }
     
     #map-holder {
@@ -121,6 +126,15 @@
       display: inline-block; vertical-align: middle;
     }
     
+    div#panes {
+      margin: 10px;
+    }
+    
+    div#panes div {
+      margin: 10px;
+      padding: 5px;
+    }
+    
   </style>
   <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=true"></script>
   <script src="js/geoxml3.js"></script>
@@ -129,6 +143,7 @@
     var busMarkers = {};
     var map, geoXml;
     var source, dest;
+    var highlightedBusId;
     var fetchedOnce = false;
     
     var routeRenames = { 671: 'A', 672: 'B', 673: 'C', 674: 'D', 'A Line': 'A', 'B Line': 'B', 'C Line': 'C', 'D Line': 'D' };
@@ -159,37 +174,42 @@
         mapTypeId: google.maps.MapTypeId.ROADMAP
       }
       map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
-      geoXml = new geoXML3.parser({map: map});
+      geoXml = new geoXML3.parser({map: map, zoom: false});
       
       google.maps.event.addListenerOnce(map, 'tilesloaded', onMapReady);
     }
     
+    function debug(val) {
+      console.log(val);
+    }
+    
     function onMapReady() {
-      websocket = new WebSocket(wsUri);
-      websocket.onmessage = function(evt) { onMessage(evt) };
-      websocket.onerror = function(evt) { onError(evt) };
+      wsConnect();
       
       window.setInterval(mapCleanup, 10000);
       google.maps.event.addListener(map, 'zoom_changed', mapCleanup);
-      google.maps.event.addListener(map, 'click', clearTrips);
+      google.maps.event.addListener(map, 'click', onMapClick);
     }
     
-    function newBus(bus) {
-      //console.log("newBus: "+bus.route);
-      if (bus.route == 'null') return;
-      var busLatLng = new google.maps.LatLng(bus.lat, bus.lon);
-      var symbol = routeIcon(bus.route, bus.normalColor, map.getZoom(), bus.heading);
-      var marker = new google.maps.Marker({ icon: symbol, position: busLatLng, title: bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString(), map: map, zIndex: parseInt(bus.coach) || 10000, bus: bus });
-      busMarkers[bus.uid] = marker;
-      google.maps.event.addListener(marker, 'click', function() {
-        //console.log(marker.bus);
-        highlightTrip(marker.bus);
-      });
+    function wsConnect() {
+      debug('Connecting to '+wsUri);
+      websocket = new WebSocket(wsUri);
+      websocket.onopen = function(evt) { onWsOpen(evt) };
+      websocket.onmessage = function(evt) { onWsMessage(evt) };
+      websocket.onerror = function(evt) { onWsError(evt) };
+      websocket.onclose = function(evt) { onWsClose(evt) };
     }
-    //"COM.NextBus.HttpMapClient.ResponseComponent"
-    //"its.app.busview.BusReport"
+    
+    function onWsOpen(evt) {
+      debug('Connected');
+    }
+    
+    function onWsClose(evt) {
+      debug('Disconnected');
+      window.setTimeout(wsConnect, Math.random() * 1000 * 25 + 5);
+    }
 
-    function onMessage(evt) {
+    function onWsMessage(evt) {
       var data = JSON.parse(evt.data);
       //if (data.items) data = data.items;
       //console.log(evt.data.length + ' bytes, ' + data.length + ' items');
@@ -205,7 +225,111 @@
         fetchedOnce = true;
         mapCleanup();
       }
+      
+      updateInfo();
     }
+    
+    function updateBus(bus) {
+      if (busReportAdapters[bus['@type']]) {
+        bus = busReportAdapters[bus['@type']](bus);
+      }
+
+      if (bus.lat > 89 || bus.lat < -89) {
+        deleteBus(bus);
+        return;
+      } else {
+        //console.log(bus.lat+','+bus.lon);
+      }
+
+      bus.uid = bus.coach;
+            
+      if (routeRenames[bus.route]) { bus.route = routeRenames[bus.route]; }
+            
+      var busMarker = busMarkers[bus.uid];
+      if (typeof busMarker === 'undefined') {
+        newBusMarker(bus);
+      } else {
+        var oldBus = busMarker.bus;
+        busMarker.bus = bus;
+        redrawBusMarker(busMarker);
+
+        if (Math.abs(bus.x - oldBus.x) + Math.abs(bus.y - oldBus.y) < 1000 &&
+          !(document.hidden || document.webkitHidden || document.msHidden)) {
+          busMarker.animatedMoveTo(bus.lat, bus.lon);
+        } else {
+          busMarker.setPosition(new google.maps.LatLng(bus.lat, bus.lon));
+        }
+        
+      }
+      
+      if (bus.uid == highlightedBusId) showBusInfo();      
+    }
+    
+    function newBusMarker(bus) {
+      //console.log("newBus: "+bus.route);
+      if (bus.route == 'null') return;
+      var busLatLng = new google.maps.LatLng(bus.lat, bus.lon);
+      var marker = new google.maps.Marker(
+        { position: busLatLng,
+          map: map,
+          zIndex: parseInt(bus.uid) || 10000,
+          bus: bus });
+
+      busMarkers[bus.uid] = marker;
+      google.maps.event.addListener(marker, 'click', function() {
+        onBusClick(marker);
+      });
+      
+      redrawBusMarker(marker);
+    }
+    
+    function redrawBusMarker(busMarker) {
+      var bus = busMarker.bus;
+      var freshness = getFreshness(bus);
+
+      if (freshness == 'dead') {
+        busMarker.setVisible(false);
+        deleteBus(bus);
+        return;
+      }
+      
+      if (freshness == 'stale') color = 'rgba(127,127,127,0.8)';
+      else color = bus.normalColor;
+      
+      var iconString = getIcon(bus, color);
+      var title = getTitle(bus);
+      
+      if (iconString != busMarker.getIcon()) busMarker.setIcon(iconString);
+      if (title != busMarker.getTitle()) busMarker.setTitle(title);
+    }
+    
+    function mapCleanup() {
+      Object.keys(busMarkers).forEach(function(busMarkerId) {
+        bus=busMarkers[busMarkerId].bus; 
+        redrawBusMarker(busMarkers[busMarkerId]);
+      });
+    }
+    
+    function getIcon(bus, optionalColor) {
+      var color = optionalColor || bus.normalColor;
+      return routeIcon(bus.route, color, map.getZoom(), bus.heading);
+    }
+    
+    function getTitle(bus) {
+      return bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString();
+    }
+    
+    function getFreshness(bus) {
+      var age = (new Date() - bus.timestamp) / 1000;
+
+      if (age > 60*5)
+        return 'dead';
+      else if (age > 60*3.5)
+        return 'stale';
+      else
+        return 'ok';
+    }
+    
     
     var feedAdapters = {
       "http://www.wsdot.wa.gov/ferries/vesselwatch": function(data) {
@@ -228,16 +352,19 @@
         bus.coach = 'SLU'+bus._busID;
         bus.lat = bus._location._latitudeInTenMillionths / 10000000;
         bus.lon = bus._location._longitudeInTenMillionths / 10000000;
-        bus.direction = bus._heading;
+        bus.heading = bus._heading;
         bus.timestamp = bus._gpsTime;
         
-        if (bus._busID == "1") bus.normalColor = 'rgba(255,0,0,0.7)';
-        else if (bus._busID == "3") bus.normalColor = 'rgba(127,0,255,0.7)';
+        if (bus._busID == "1") bus.normalColor = 'rgba(223,0,0,0.7)';
+        else if (bus._busID == "2") bus.normalColor = 'rgba(223,127,0,0.7)';
+        else if (bus._busID == "3") bus.normalColor = 'rgba(127,0,223,0.7)';
         
         return bus;
       },
       
       "com.busdrone.BusReport": function(bus) {
+        if (bus.vehicleId == '40_9279') console.log(bus);
+        if (bus.vehicleId == '9279') console.log(bus);
         bus.coach = bus.vehicleId;
         bus.normalColor = 'rgba(112,148,255,0.7)';
         //bus.normalColor = 'rgba(255,0,0,0.8)';
@@ -246,71 +373,75 @@
       },
       
       "its.app.busview.BusReport": function(bus) {
+        //console.log(bus);
         bus.normalColor = 'rgba(112,148,255,0.7)';
         return bus;
       }
     }
     
     function deleteBus(bus) {
+      //console.log((new Date(bus.timestamp)).toLocaleTimeString());
       var busMarker = busMarkers[bus.uid];
-      if (busMarker) map.removeOverlay(busMarker);
-    }
-        
-    function updateBus(bus) {
-      if (busReportAdapters[bus['@type']]) {
-        bus = busReportAdapters[bus['@type']](bus);
-      }
-
-      bus.uid = bus.coach;
-      
-      if (routeRenames[bus.route]) { bus.route = routeRenames[bus.route]; }
-      
-      var busMarker = busMarkers[bus.uid];
-      if (typeof busMarker === 'undefined') {
-        newBus(bus);
-      } else {
-        var oldBus = busMarker.bus;
-        busMarker.bus = bus;
-        redrawBusMarker(busMarker);
-
-        if (Math.abs(bus.x - oldBus.x) + Math.abs(bus.y - oldBus.y) < 1000 &&
-          !(document.hidden || document.webkitHidden || document.msHidden)) {
-          busMarker.animatedMoveTo(bus.lat, bus.lon);
-        } else {
-          busMarker.setPosition(new google.maps.LatLng(bus.lat, bus.lon));
+      delete busMarkers[bus.uid];
+      if (busMarker) {
+        try {
+          busMarker.map.removeOverlay(busMarker);
+        } catch(err) {
+          //console.log(err);
+          //console.log(bus);
         }
-        
       }
+      updateInfo();
     }
     
-    function mapCleanup() {
-      for(busMarkerId in busMarkers) {
-        redrawBusMarker(busMarkers[busMarkerId]);
-      }
-    }
-    
-    function redrawBusMarker(busMarker) {
-      bus = busMarker.bus;
-      age = (new Date() - bus.timestamp) / 1000;
-            
-      if (age > 60*5) {
-        busMarker.setVisible(false);
-        return;
-      }
-      
-      if (age > 60*3.5) color = 'rgba(127,127,127,0.8)';
-      else color = bus.normalColor;
-      
-      var iconString = routeIcon(bus.route, color, map.getZoom(), bus.heading);
-      title = bus.coach+'/'+(new Date(bus.timestamp)).toLocaleTimeString();
-      
-      if (iconString != busMarker.getIcon()) busMarker.setIcon(iconString);
-      if (title != busMarker.getTitle()) busMarker.setTitle(title);
-    }
-    
-    function highlightTrip(bus) {
+    function onMapClick() {
+      highlightedBusId = null;
       clearTrips();
-      geoXml.parse('kml/kcmetro/'+bus.route+'.kml');
+      showBusInfo();
+    }
+    
+    function onBusClick(marker) {
+      highlightedBusId = marker.bus.uid;
+      highlightTrip();
+      showBusInfo();
+    }
+    
+    function updateInfo() {
+      // XXX: need to figure out how to get an accurate count
+      //$('#bus-count')[0].innerHTML = Object.keys(busMarkers).length;
+    }
+    
+    function showBusInfo() {
+      var busMarker = busMarkers[highlightedBusId];
+
+      if (!busMarker) {
+         $('#route-info')[0].innerHTML = "";
+         return;
+      }
+      
+      var bus = busMarker.bus;
+      
+      $('#route-info')[0].innerHTML = '\
+        <table class="table table-bordered">\
+          <tr><th>Route</th><td>'+bus.route+'</td></tr>\
+          <tr><th>Coach</th><td>'+bus.coach+'</td></tr>\
+          <tr><th>Heading</th><td>'+getDir(bus.heading)+' ('+bus.heading+'°)</td></tr>\
+          <tr><th>Last seen</th><td>'+(new Date(bus.timestamp)).toLocaleTimeString()+'</td></tr>';
+    }
+    
+    function getDir(heading) {
+      var dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW', 'N'];
+      return dirs[Math.round(heading/22.5)];
+    }
+    
+    function highlightTrip() {
+      var busMarker = busMarkers[highlightedBusId];
+      
+      clearTrips();
+      
+      if (!busMarker) return;
+      
+      geoXml.parse('kml/kcmetro/'+busMarker.bus.route+'.kml');
     }
     
     function clearTrips() {
@@ -416,8 +547,8 @@
       return canvas;
     }
 
-    function onError(evt) {
-      console.log('ERROR: ' + evt.data);
+    function onWsError(evt) {
+      debug('ERROR: ' + evt.data);
     }
 
     window.addEventListener("load", init, false);
@@ -426,11 +557,25 @@
 <body>
   <div id="panel" class="show-panel">
     <div id="hide-button">
-      ◀
+      <i class="icon-chevron-left"></i>
     </div>
     <img src="img/busdrone-vert.png" id="logo" width="240" height="170">
+    
+    <div id="panes">
+      <div id="stats" style="display: none">
+        Showing <span id="bus-count">?</span> buses/trains/ferries.
+      </div>
+      <div id="route-info">
+      </div>
+    </div>
+    
     <div id="info">
-      Data from <a href="http://www.its.washington.edu/projects/busview_overview.html">Busview</a><br/>
+      Data sources:
+        <li><a href="http://www.its.washington.edu/projects/busview_overview.html">Busview</a></li>
+        <li><a href="http://www.nextbus.com/predictor/stopSelector.jsp?a=seattle-sc">NextBus</a></li>
+        <li><a href="http://www.onebusaway.org/">OneBusAway</a></li>
+        <li><a href="http://www.wsdot.com/ferries/vesselwatch/Default.aspx">WSDOT VesselWatch</a></li>
+      <br/>
       Inspired by <a href="http://firemet.aws.af.cm/">PDX Live Bus</a><br/>
       Written by <a href="http://afiler.com/">Andrew Filer</a><br/>
       <a href="https://github.com/afiler/busdrone/"><img src="img/github-icon.png" width="16" height="16">Source on Github</a><br/>
@@ -439,7 +584,7 @@
   </div>
   <div id="map-holder">
     <div id="show-button">
-      ▶
+      <i class="icon-chevron-right"></i>
     </div>
     <div id="map-canvas"></div>
   </div>

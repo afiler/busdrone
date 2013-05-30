@@ -12,6 +12,7 @@ public class WSFerryFetcher extends Fetcher {
 	public WSFerryFetcher(BusReportServer s) {
 		super();
 		server = s;
+		sleepSecs = 10;
 	}
 	
 	@Override
@@ -22,7 +23,5 @@ public class WSFerryFetcher extends Fetcher {
 			server.sendToAll(json);
 			db.set("wsferry", json);
 		}
-
-		Thread.sleep(10000);
 	}
 }

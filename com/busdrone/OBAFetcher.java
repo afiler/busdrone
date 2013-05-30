@@ -14,7 +14,7 @@ import redis.clients.jedis.Jedis;
 public class OBAFetcher extends Fetcher {
 	public static String endpointUrlFmt = "http://api.onebusaway.org/api/where/vehicles-for-agency/%s.xml?key=TEST%s";
 	//public static String[] agencyIds = {"1", "3", "19", "KMD", "40", "35", "23", "sch", "29"};
-	public static String[] agencyIds = {"3", "40", "29"};
+	public static String[] agencyIds = {"3", "19", "KMD", "40", "35", "23", "sch", "29"}; //{"3", "40", "29"};
 	
 	public Hashtable<String, BusReport> busReports = new Hashtable<String, BusReport>();
 	
@@ -24,7 +24,6 @@ public class OBAFetcher extends Fetcher {
 	
 	public int runCount = 0;
 	public int refreshReferenceInterval = 6;
-	public int sleepIntervalSecs = 10;
 	
 	/*public static String[] endpointUrls = {
 		"http://api.onebusaway.org/api/where/vehicles-for-agency/1.xml?key=TEST&includeReferences=false",
@@ -41,6 +40,7 @@ public class OBAFetcher extends Fetcher {
 	public OBAFetcher(BusReportServer s) {
 		super();
 		server = s;
+		sleepSecs = 10;
 		/*try (CSVReader routesCsv = new CSVReader(new FileReader("public/gtfs/kcmetro/routes.txt"));
 		     CSVReader tripsCsv  = new CSVReader(new FileReader("public/gtfs/kcmetro/trips.txt")))
 		{
@@ -126,6 +126,5 @@ public class OBAFetcher extends Fetcher {
 		if (++runCount >= refreshReferenceInterval) runCount = 0;
 		
 		//System.out.println("OBAFetcher complete. "+updated+" updated");
-		Thread.sleep(sleepIntervalSecs * 1000);
 	}
 }

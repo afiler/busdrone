@@ -31,7 +31,7 @@ public class BusReportServer extends WebSocketServer {
 		s.start();
 		System.out.println( "Server started on port " + s.getPort() );
 		
-		//new NextBusFetcher(s).start();
+		new NextBusFetcher(s).start();
 		new BusViewFetcher(s).start();
 		new WSFerryFetcher(s).start();
 		new OBAFetcher(s).start();
@@ -85,7 +85,7 @@ public class BusReportServer extends WebSocketServer {
 			builder.append("]");
 			synchronized (conn) {
 				conn.send(builder.toString());
-				conn.send(db.get("nextbus"));
+				conn.send(db.get("com.busdrone.reports.nextbus"));
 				conn.send(db.get("wsferry"));
 				conn.send(db.get("com.busdrone.reports.onebusaway"));
 			}
