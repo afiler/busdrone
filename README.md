@@ -6,12 +6,15 @@ Busdrone includes a Java service to relay the serialized objects from Busview
 as JSON objects through websockets. Objects are cached locally using Redis.
 
 ## Dependencies
-### Server
+### WebSocket Server
 * [Redis](http://redis.io)
 * [Jedis](https://github.com/xetorthio/jedis/)
  * [Apache Commons pool](http://commons.apache.org/proper/commons-pool/download_pool.cgi)
 * [json-io](http://code.google.com/p/json-io/)
 * [Java-WebSocket](https://github.com/TooTallNate/Java-WebSocket/)
+
+### HTTP Server
+* [Simple PHP Proxy](https://github.com/cowboy/php-simple-proxy/)
 
 ### Client
 * [jQuery](http://jquery.com/) (linked)

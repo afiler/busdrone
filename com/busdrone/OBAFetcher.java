@@ -25,42 +25,15 @@ public class OBAFetcher extends Fetcher {
 	public int runCount = 0;
 	public int refreshReferenceInterval = 6;
 	
-	/*public static String[] endpointUrls = {
-		"http://api.onebusaway.org/api/where/vehicles-for-agency/1.xml?key=TEST&includeReferences=false",
-		"http://api.onebusaway.org/api/where/vehicles-for-agency/3.xml?key=TEST&includeReferences=false",
-		"http://api.onebusaway.org/api/where/vehicles-for-agency/19.xml?key=TEST&includeReferences=false",
-		"http://api.onebusaway.org/api/where/vehicles-for-agency/KMD.xml?key=TEST&includeReferences=false",
-		"http://api.onebusaway.org/api/where/vehicles-for-agency/40.xml?key=TEST&includeReferences=false",
-		"http://api.onebusaway.org/api/where/vehicles-for-agency/35.xml?key=TEST&includeReferences=false",
-		"http://api.onebusaway.org/api/where/vehicles-for-agency/23.xml?key=TEST&includeReferences=false",
-		"http://api.onebusaway.org/api/where/vehicles-for-agency/sch.xml?key=TEST&includeReferences=false",
-		"http://api.onebusaway.org/api/where/vehicles-for-agency/29.xml?key=TEST&includeReferences=false",
-	};*/
-	
 	public OBAFetcher(BusReportServer s) {
 		super();
 		server = s;
 		sleepSecs = 10;
-		/*try (CSVReader routesCsv = new CSVReader(new FileReader("public/gtfs/kcmetro/routes.txt"));
-		     CSVReader tripsCsv  = new CSVReader(new FileReader("public/gtfs/kcmetro/trips.txt")))
-		{
-			String[] line;
-			routesCsv.readNext(); // skip header
-			while ((line = routesCsv.readNext()) != null)
-				routeIdsRoutes.put(line[0], line[2]);
-			tripsCsv.readNext(); // skip header
-			while ((line = tripsCsv.readNext()) != null)
-				tripIdsRoutes.put("1_"+line[2], routeIdsRoutes.get(line[0]));
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		//System.out.println(tripIdsRoutes);*/
 	}
 	
 	@Override
 	public void runOnce(Jedis db) throws Exception {
 		int updated=0;
-		//System.out.println("Starting OBAFetcher. runCount:"+runCount);
 		ArrayList<BusReport> reports = new ArrayList<BusReport>();
 		Builder parser = new Builder();
 		String includeReferences = runCount == 0 ? "" : "&includeReferences=false";

@@ -142,14 +142,16 @@
     }
     
   </style>
-  <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=true"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=geometry&sensor=true"></script>
   <script src="js/geoxml3.js"></script>
   <script>
     var wsUri = "ws://"+(document.location.hostname||"localhost")+":28737/";
     var busMarkers = {};
+    var tripLines = {};
     var map, geoXml;
     var source, dest;
     var highlightedBusId;
+    var highlightedTripLine;
     var fetchedOnce = false;
     
     var routeRenames = { 671: 'A', 672: 'B', 673: 'C', 674: 'D', 'A Line': 'A', 'B Line': 'B', 'C Line': 'C', 'D Line': 'D' };
@@ -382,6 +384,7 @@
       
       "its.app.busview.BusReport": function(bus) {
         bus.normalColor = 'rgba(112,148,255,0.7)';
+        bus.vehicleId = '1_'+bus.coach;
         return bus;
       }
     }
@@ -403,7 +406,7 @@
     
     function onMapClick() {
       highlightedBusId = null;
-      clearTrips();
+      clearTripLines();
       showBusInfo();
     }
     
@@ -432,7 +435,7 @@
       $('#route-info')[0].innerHTML = '\
         <table class="table table-bordered">\
           <tr><th>Route</th><td>'+bus.route+'</td></tr>\
-          <tr><th>Coach</th><td>'+bus.coach+'</td></tr>\
+          <tr><th>Vehicle</th><td>'+bus.coach+'</td></tr>\
           <tr><th>Heading</th><td>'+getDir(bus.heading)+' ('+bus.heading+'°)</td></tr>\
           <tr><th>Last seen</th><td>'+(new Date(bus.timestamp)).toLocaleTimeString()+'</td></tr>';
     }
@@ -444,16 +447,64 @@
     
     function highlightTrip() {
       var busMarker = busMarkers[highlightedBusId];
+      var bus = busMarker.bus;
       
-      clearTrips();
+      clearTripLines();
       
       if (!busMarker) return;
       
-      geoXml.parse('kml/kcmetro/'+busMarker.bus.route+'.kml');
+      //geoXml.parse('kml/kcmetro/'+busMarker.bus.route+'.kml');
+
+      var key = bus.route+','+bus.vehicleId;
+      if (tripLines[key]) return showLine(tripLines[key]);
+      
+      var tripUrl = "onebusaway/api/where/trip-for-vehicle/"+bus.vehicleId+".xml";
+      
+      $.ajax({
+        url: tripUrl,
+      }).done(function(result) {
+        if (result.status.http_code != 200) {
+          console.log("Got "+result.status.http_code+" for "+tripUrl);
+          return;
+        }
+        
+        var tripId = $(result.contents).find("shapeId")[0].textContent;
+        
+        var shapeUrl = "onebusaway/api/where/shape/"+tripId+".xml";
+        $.ajax({
+          url: shapeUrl,
+        }).done(function(result) {
+          if (result.status.http_code != 200) {
+            console.log("Got "+result.status.http_code+" for "+shapeUrl);
+            return;
+          }
+          
+          var path = google.maps.geometry.encoding.decodePath(
+            $(result.contents).find("points")[0].textContent);
+          
+          tripLines[key] = new google.maps.Polyline({
+                path: path,
+                strokeColor: bus.normalColor,
+                strokeOpacity: 1.0,
+                strokeWeight: 2,
+                map: map
+          });
+          
+          highlightedTripLine = tripLines[key];
+        });
+      });
+      
     }
     
-    function clearTrips() {
-      geoXml.docs.forEach(function(doc) { geoXml.hideDocument(doc); });
+    function showLine(line) {
+      clearTripLines();
+      highlightedTripLine = line;
+      highlightedTripLine.setMap(map);
+    }
+    
+    function clearTripLines() {
+      //geoXml.docs.forEach(function(doc) { geoXml.hideDocument(doc); });
+      if (highlightedTripLine) highlightedTripLine.setMap(null);
     }
     
     function roundedRect(ctx,x,y,width,height,radius,fill,stroke) {
@@ -597,10 +648,10 @@
     <span class="caret"></span>
     </button>
     <ul class="dropdown-menu pull-right">
-      <li><a href="javascript:goTo(47.606395,-122.333136,13)">Seattle</a></li>
-      <li><a href="javascript:goTo(47.62988,-122.16608, 13)">Bellevue</a></li>
+      <li><a href="javascript:goTo(47.606395,-122.333136,12)">Seattle</a></li>
+      <li><a href="javascript:goTo(47.62988,-122.16608,12)">Bellevue</a></li>
       <li><a href="javascript:goTo(47.38673,-122.22153,12)">S King Co</a></li>
-      <li><a href="javascript:goTo(47.24428,-122.43851,13)">Tacoma</a></li>
+      <li><a href="javascript:goTo(47.24428,-122.43851,12)">Tacoma</a></li>
       <li><a href="javascript:goTo(47.03293,-122.86285,13)">Olympia</a></li>
     </ul>
   </div>
