@@ -14,7 +14,7 @@ import redis.clients.jedis.Jedis;
 public class OBAFetcher extends Fetcher {
 	public static String endpointUrlFmt = "http://api.onebusaway.org/api/where/vehicles-for-agency/%s.xml?key=TEST%s";
 	//public static String[] agencyIds = {"1", "3", "19", "KMD", "40", "35", "23", "sch", "29"};
-	public static String[] agencyIds = {"3", "19", "KMD", "40", "35", "23", "sch", "29"}; //{"3", "40", "29"};
+	public static String[] agencyIds = {"3", "19"}; //{"3", "40", "29"};
 	
 	public Hashtable<String, BusReport> busReports = new Hashtable<String, BusReport>();
 	
@@ -69,6 +69,10 @@ public class OBAFetcher extends Fetcher {
 			String endpointUrl = String.format(endpointUrlFmt, agencyID, includeReferences);
 			Document doc = parser.build(endpointUrl);
 			
+			//long now = System.currentTimeMillis();
+			long reportTimestamp = Long.parseLong(((Element)(doc.query("/response/currentTime").get(0))).getValue());
+
+			
 			Nodes routes = doc.query("//response/data/references/routes/route");
 			for(int i=0; i<routes.size(); i++) {
 				try {
@@ -101,6 +105,7 @@ public class OBAFetcher extends Fetcher {
 					report.lat = Double.parseDouble(vehicleStatus.query("location/lat").get(0).getValue());
 					report.lon = Double.parseDouble(vehicleStatus.query("location/lon").get(0).getValue());
 					report.timestamp = Long.parseLong(vehicleStatus.query("lastUpdateTime").get(0).getValue());
+					report.age = reportTimestamp - report.timestamp;
 
 					if (runCount == 0 || !report.equals(busReports.get(report.vehicleId))) {
 						reports.add(report); updated++;

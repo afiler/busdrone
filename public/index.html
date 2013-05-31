@@ -98,6 +98,12 @@
       cursor: pointer;
     }    
     
+    #goto-button {
+      position: absolute;
+      bottom: 20px;
+      right: 10px;
+      z-index: 100;
+    }
 
 
     @media print {
@@ -152,6 +158,9 @@
     var routeIcons = {};
     var arrowIcons = {};
     
+    if (!window.console)
+      window.console = { log: function(){} };
+    
     function init() {
       $('#hide-button').click(function() {
         $('#hide-button').hide();
@@ -189,6 +198,11 @@
       window.setInterval(mapCleanup, 10000);
       google.maps.event.addListener(map, 'zoom_changed', mapCleanup);
       google.maps.event.addListener(map, 'click', onMapClick);
+    }
+    
+    function goTo(lat, lon, zoom) {
+      map.setCenter(new google.maps.LatLng(lat, lon));
+      map.setZoom(zoom);
     }
     
     function wsConnect() {
@@ -233,16 +247,17 @@
       if (busReportAdapters[bus['@type']]) {
         bus = busReportAdapters[bus['@type']](bus);
       }
-
-      if (bus.lat > 89 || bus.lat < -89) {
+      
+      if (bus.lat > 89 || bus.lat < -89 || !bus.route || bus.route == 'null' ||
+          getFreshness(bus) == 'dead' ) {
         deleteBus(bus);
         return;
-      } else {
-        //console.log(bus.lat+','+bus.lon);
-      }
-
-      bus.uid = bus.coach;
-            
+      }      
+      
+      bus.uid = bus.vehicleId || bus.coach;
+      bus.age = bus.age || (new Date() - bus.timestamp);
+      
+                  
       if (routeRenames[bus.route]) { bus.route = routeRenames[bus.route]; }
             
       var busMarker = busMarkers[bus.uid];
@@ -267,7 +282,6 @@
     
     function newBusMarker(bus) {
       //console.log("newBus: "+bus.route);
-      if (bus.route == 'null') return;
       var busLatLng = new google.maps.LatLng(bus.lat, bus.lon);
       var marker = new google.maps.Marker(
         { position: busLatLng,
@@ -320,11 +334,10 @@
     }
     
     function getFreshness(bus) {
-      var age = (new Date() - bus.timestamp) / 1000;
-
-      if (age > 60*5)
+      var ageMins = bus.age / 1000 / 60;
+      if (ageMins > 5)
         return 'dead';
-      else if (age > 60*3.5)
+      else if (ageMins > 3)
         return 'stale';
       else
         return 'ok';
@@ -337,6 +350,15 @@
           bus.coach = 'WSF'+bus.vesselID;
           bus.heading = bus.head;
           bus.normalColor = 'rgba(1,115,89,0.7)';
+
+          var d = new Date(bus.datetime);
+          bus.timestamp = new Date();
+          bus.timestamp.setMonth(d.getMonth());
+          bus.timestamp.setDate(d.getDate());
+          bus.timestamp.setHours(d.getHours());
+          bus.timestamp.setMinutes(d.getMinutes());
+          bus.timestamp.setSeconds(0);
+
           if (bus.inservice == 'True') {
             updateBus(bus);
           } else {
@@ -347,33 +369,18 @@
     }
 
     var busReportAdapters = {
-      "COM.NextBus.Predictor2Comm.BusReport": function(bus) {
-        bus.route = 'SLU';
-        bus.coach = 'SLU'+bus._busID;
-        bus.lat = bus._location._latitudeInTenMillionths / 10000000;
-        bus.lon = bus._location._longitudeInTenMillionths / 10000000;
-        bus.heading = bus._heading;
-        bus.timestamp = bus._gpsTime;
-        
-        if (bus._busID == "1") bus.normalColor = 'rgba(223,0,0,0.7)';
-        else if (bus._busID == "2") bus.normalColor = 'rgba(223,127,0,0.7)';
-        else if (bus._busID == "3") bus.normalColor = 'rgba(127,0,223,0.7)';
-        
-        return bus;
-      },
-      
       "com.busdrone.BusReport": function(bus) {
-        if (bus.vehicleId == '40_9279') console.log(bus);
-        if (bus.vehicleId == '9279') console.log(bus);
-        bus.coach = bus.vehicleId;
-        bus.normalColor = 'rgba(112,148,255,0.7)';
-        //bus.normalColor = 'rgba(255,0,0,0.8)';
-        //console.log(bus);
+        bus.coach = bus.coach || bus.vehicleId;
+        
+        if (bus.color && typeof bus.color == 'string' && bus.color != '')
+          bus.normalColor = bus.color;
+        else
+          bus.normalColor = 'rgba(112,148,255,0.7)';
+
         return bus;
       },
       
       "its.app.busview.BusReport": function(bus) {
-        //console.log(bus);
         bus.normalColor = 'rgba(112,148,255,0.7)';
         return bus;
       }
@@ -404,6 +411,7 @@
       highlightedBusId = marker.bus.uid;
       highlightTrip();
       showBusInfo();
+      console.log(marker.bus);
     }
     
     function updateInfo() {
@@ -582,6 +590,21 @@
       <a href="https://twitter.com/busdrone" ><img src="img/twitter-icon.png" width="16" height="16">@busdrone on Twitter</a>
     </div>
   </div>
+  
+  <div id="goto-button" class="btn-group dropup">
+    <button class="btn">Go to...</button>
+    <button class="btn dropdown-toggle" data-toggle="dropdown">
+    <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu pull-right">
+      <li><a href="javascript:goTo(47.606395,-122.333136,13)">Seattle</a></li>
+      <li><a href="javascript:goTo(47.62988,-122.16608, 13)">Bellevue</a></li>
+      <li><a href="javascript:goTo(47.38673,-122.22153,12)">S King Co</a></li>
+      <li><a href="javascript:goTo(47.24428,-122.43851,13)">Tacoma</a></li>
+      <li><a href="javascript:goTo(47.03293,-122.86285,13)">Olympia</a></li>
+    </ul>
+  </div>
+  
   <div id="map-holder">
     <div id="show-button">
       <i class="icon-chevron-right"></i>
