@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.WebSocketImpl;
@@ -18,11 +20,11 @@ import com.busdrone.NextBusFetcher;
 import com.busdrone.BusViewFetcher;
 
 public class BusReportServer extends WebSocketServer {
-	public JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost");
+	public EventStore eventStore = new EventStore();
 	
 	public static void main( String[] args ) throws InterruptedException , IOException {
 		WebSocketImpl.DEBUG = false;
-		int port = 28737;
+		int port = 28738;
 		try {
 			port = Integer.parseInt( args[ 0 ] );
 		} catch ( Exception ex ) {
@@ -38,7 +40,8 @@ public class BusReportServer extends WebSocketServer {
 	}
 
 	public void sendToAll( String text ) {
-		//System.out.println(text);
+		if (text == null) return;
+		System.out.println(text);
 		Collection<WebSocket> con = connections();
 		synchronized ( con ) {
 			for( WebSocket c : con ) {
@@ -64,19 +67,7 @@ public class BusReportServer extends WebSocketServer {
 	@Override
 	public void onOpen(WebSocket conn, ClientHandshake handshake) {		
 		System.out.println( "new connection: " + handshake.getResourceDescriptor() );
-		/*for (String key : busReportDb.hkeys("buses")) {
-			//String foo = busReportDb.get(key);
-			//System.out.println(key + ": " + foo);
-			//conn.send(busReportDb.get(key));
-			System.out.println("Dumping stored set");
-			synchronized (conn) {
-				conn.send(busReportDb.get(key));
-			}
-		}*/
-
-		Jedis db = jedisPool.getResource();
-		try {	
-			StringBuilder builder = new StringBuilder();
+		/*	StringBuilder builder = new StringBuilder();
 			builder.append("[");		
 			for (String key : db.hkeys("buses")) {
 				if (builder.length() > 1) builder.append(",");
@@ -88,10 +79,7 @@ public class BusReportServer extends WebSocketServer {
 				conn.send(db.get("com.busdrone.reports.nextbus"));
 				conn.send(db.get("com.busdrone.reports.wsferry"));
 				conn.send(db.get("com.busdrone.reports.onebusaway"));
-			}
-		} finally {
-			jedisPool.returnResource(db);
-		}
+		*/
 	}
 
 	@Override

@@ -37,7 +37,7 @@ public class OBAFetcher extends Fetcher {
 	}
 	
 	@Override
-	public void runOnce(Jedis db) throws Exception {
+	public void runOnce(EventStore eventStore) throws Exception {
 		int updated=0;
 		ArrayList<BusReport> reports = new ArrayList<BusReport>();
 		Builder parser = new Builder();
@@ -86,12 +86,12 @@ public class OBAFetcher extends Fetcher {
 					report.timestamp = Long.parseLong(vehicleStatus.query("lastUpdateTime").get(0).getValue());
 					report.age = reportTimestamp - report.timestamp;
 
-					if (runCount == 0 || !report.equals(busReports.get(report.vehicleId))) {
-						reports.add(report.cleanup()); updated++;
-					}
+					//if (runCount == 0 || !report.equals(busReports.get(report.vehicleId))) {
+					//	reports.add(report.cleanup()); updated++;
+					//}
 					
-					busReports.put(report.vehicleId, report);
-
+					//busReports.put(report.vehicleId, report);
+					server.sendToAll(report.syncAndDump(eventStore));
 					
 				} catch (Exception e) {
 					//System.out.println(vehicleStatuses.get(i));
@@ -101,13 +101,13 @@ public class OBAFetcher extends Fetcher {
 			}
 		}
 		
-		String json = gson.toJson(reports.toArray());
-		server.sendToAll(json);
+		//String json = gson.toJson(reports.toArray());
+		//server.sendToAll(json);
 		
-		if (runCount == 0)
-			db.set("com.busdrone.reports.onebusaway", JsonWriter.objectToJson(reports.toArray()));
+		//if (runCount == 0)
+		//	db.set("com.busdrone.reports.onebusaway", JsonWriter.objectToJson(reports.toArray()));
 
-		if (++runCount >= refreshReferenceInterval) runCount = 0;
+		//if (++runCount >= refreshReferenceInterval) runCount = 0;
 		
 		//System.out.println("OBAFetcher complete. "+updated+" updated");
 	}

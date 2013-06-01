@@ -38,7 +38,7 @@ public class WSFerryFetcher extends Fetcher {
 	}
 	
 	@Override
-	public void runOnce(Jedis db) throws Exception {
+	public void runOnce(EventStore eventStore) throws Exception {
 		URLConnection connection = new URL(endpointUrl).openConnection();
 		ArrayList<BusReport> reports = new ArrayList<BusReport>();
 		JsonParser parser = new JsonParser();
@@ -71,15 +71,18 @@ public class WSFerryFetcher extends Fetcher {
 				report.heading = o.get("head").getAsInt();
 				report.timestamp = parseDatetime(o.get("datetime").getAsString());
 				
-				reports.add(report.cleanup());
+				//reports.add(report.cleanup());
+				//server.sendToAll(report.toEventJson());
+				
+				server.sendToAll(report.syncAndDump(eventStore));
 				
 			} catch (Exception e) {}
 			
 		}
 		
-		String json = gson.toJson(reports.toArray());
-		server.sendToAll(json);
-		db.set("com.busdrone.reports.wsferry", json);
+		//String json = gson.toJson(reports.toArray());
+		//server.sendToAll(json);
+		//db.set("com.busdrone.reports.wsferry", json);
 	}
 	
 	@SuppressWarnings("deprecation")

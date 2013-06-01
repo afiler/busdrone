@@ -28,8 +28,8 @@ public class NextBusFetcher extends Fetcher {
 	}
 
 	@Override
-	public void runOnce(Jedis db) throws Exception {
-		ArrayList<BusReport> reports = new ArrayList<BusReport>();
+	public void runOnce(EventStore eventStore) throws Exception {
+		//ArrayList<BusReport> reports = new ArrayList<BusReport>();
 		
 		Builder parser = new Builder();
 		Document doc = parser.build(endpointUrl);
@@ -64,14 +64,16 @@ public class NextBusFetcher extends Fetcher {
 		        report.color = report.color + "";
 		        report.route = report.route + "";
 				
-				reports.add(report.cleanup());
+				//reports.add(report.cleanup());
 				//busReports.put(report.vehicleId, report);
+		        //server.sendToAll(report.toEventJson());
+		        server.sendToAll(report.syncAndDump(eventStore));
 			} catch (Exception e) {
-				
+				e.printStackTrace();
 			}
 		}
 
-		String json = gson.toJson(reports.toArray());
-		server.sendToAll(json);
+		//String json = gson.toJson(reports.toArray());
+		//server.sendToAll(json);
 	}
 }
