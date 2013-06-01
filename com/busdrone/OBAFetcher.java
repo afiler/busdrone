@@ -102,8 +102,6 @@ public class OBAFetcher extends Fetcher {
 		}
 		
 		String json = gson.toJson(reports.toArray());
-		System.out.println(json);
-
 		server.sendToAll(json);
 		
 		if (runCount == 0)

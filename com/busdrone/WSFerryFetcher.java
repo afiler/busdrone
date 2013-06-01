@@ -78,7 +78,6 @@ public class WSFerryFetcher extends Fetcher {
 		}
 		
 		String json = gson.toJson(reports.toArray());
-		server.sendToAll(json);
 		db.set("com.busdrone.reports.wsferry", json);
 	}
 	
