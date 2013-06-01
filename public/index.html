@@ -246,8 +246,6 @@
     }
     
     function updateBus(bus) {
-      console.log(bus.uid);
-      
       if (busReportAdapters[bus['@type']]) {
         bus = busReportAdapters[bus['@type']](bus);
       }
