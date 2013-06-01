@@ -143,12 +143,11 @@
     
   </style>
   <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=geometry&sensor=true"></script>
-  <script src="js/geoxml3.js"></script>
   <script>
     var wsUri = "ws://"+(document.location.hostname||"localhost")+":28737/";
     var busMarkers = {};
     var tripLines = {};
-    var map, geoXml;
+    var map;
     var source, dest;
     var highlightedBusId;
     var highlightedTripLine;
@@ -178,6 +177,8 @@
         $('#map-holder').animate({left:'260px'}, 200);
       });
       
+      $('#route-info').hide();
+      
       var myLatlng = new google.maps.LatLng(47.606395,-122.333136);
       var mapOptions = {
         zoom: 13,
@@ -185,7 +186,6 @@
         mapTypeId: google.maps.MapTypeId.ROADMAP
       }
       map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
-      geoXml = new geoXML3.parser({map: map, zoom: false});
       
       google.maps.event.addListenerOnce(map, 'tilesloaded', onMapReady);
     }
@@ -246,6 +246,8 @@
     }
     
     function updateBus(bus) {
+      console.log(bus.uid);
+      
       if (busReportAdapters[bus['@type']]) {
         bus = busReportAdapters[bus['@type']](bus);
       }
@@ -256,9 +258,14 @@
         return;
       }      
       
+      bus.coach = bus.coach || bus.vehicleId;
       bus.uid = bus.vehicleId || bus.coach;
       bus.age = bus.age || (new Date() - bus.timestamp);
       
+      if (bus.color && typeof bus.color == 'string' && bus.color != '')
+        bus.normalColor = bus.color;
+      else
+        bus.normalColor = 'rgba(112,148,255,0.7)';
                   
       if (routeRenames[bus.route]) { bus.route = routeRenames[bus.route]; }
             
@@ -371,17 +378,6 @@
     }
 
     var busReportAdapters = {
-      "com.busdrone.BusReport": function(bus) {
-        bus.coach = bus.coach || bus.vehicleId;
-        
-        if (bus.color && typeof bus.color == 'string' && bus.color != '')
-          bus.normalColor = bus.color;
-        else
-          bus.normalColor = 'rgba(112,148,255,0.7)';
-
-        return bus;
-      },
-      
       "its.app.busview.BusReport": function(bus) {
         bus.normalColor = 'rgba(112,148,255,0.7)';
         bus.vehicleId = '1_'+bus.coach;
@@ -426,18 +422,21 @@
       var busMarker = busMarkers[highlightedBusId];
 
       if (!busMarker) {
-         $('#route-info')[0].innerHTML = "";
+         $('#route-info').hide();
          return;
       }
       
       var bus = busMarker.bus;
       
-      $('#route-info')[0].innerHTML = '\
+      $('#route-info-data')[0].innerHTML = '\
         <table class="table table-bordered">\
           <tr><th>Route</th><td>'+bus.route+'</td></tr>\
           <tr><th>Vehicle</th><td>'+bus.coach+'</td></tr>\
           <tr><th>Heading</th><td>'+getDir(bus.heading)+' ('+bus.heading+'°)</td></tr>\
-          <tr><th>Last seen</th><td>'+(new Date(bus.timestamp)).toLocaleTimeString()+'</td></tr>';
+          <tr><th>Last seen</th><td>'+(new Date(bus.timestamp)).toLocaleTimeString()+'</td></tr>\
+        </table>';
+      
+      $('#route-info').show();
     }
     
     function getDir(heading) {
@@ -453,8 +452,6 @@
       
       if (!busMarker) return;
       
-      //geoXml.parse('kml/kcmetro/'+busMarker.bus.route+'.kml');
-
       var key = bus.route+','+bus.vehicleId;
       if (tripLines[key]) return showLine(tripLines[key]);
       
@@ -503,8 +500,9 @@
     }
     
     function clearTripLines() {
-      //geoXml.docs.forEach(function(doc) { geoXml.hideDocument(doc); });
       if (highlightedTripLine) highlightedTripLine.setMap(null);
+      
+      for (var k in tripLines) tripLines[k].setMap(null);
     }
     
     function roundedRect(ctx,x,y,width,height,radius,fill,stroke) {
@@ -625,6 +623,8 @@
         Showing <span id="bus-count">?</span> buses/trains/ferries.
       </div>
       <div id="route-info">
+        <div id="route-info-data"></div>
+        <button class="btn" type="button">Show only this route</button>
       </div>
     </div>
     
@@ -637,8 +637,8 @@
       <br/>
       Inspired by <a href="http://firemet.aws.af.cm/">PDX Live Bus</a><br/>
       Written by <a href="http://afiler.com/">Andrew Filer</a><br/>
-      <a href="https://github.com/afiler/busdrone/"><img src="img/github-icon.png" width="16" height="16">Source on Github</a><br/>
-      <a href="https://twitter.com/busdrone" ><img src="img/twitter-icon.png" width="16" height="16">@busdrone on Twitter</a>
+      <a href="https://github.com/afiler/busdrone/"><img src="img/github-icon.png" width="16" height="16" style="width: 16px; height: 16px;">Source on Github</a><br/>
+      <a href="https://twitter.com/busdrone" ><img src="img/twitter-icon.png" width="16" height="16" style="width: 16px; height: 16px;">@busdrone on Twitter</a>
     </div>
   </div>
   
@@ -652,7 +652,7 @@
       <li><a href="javascript:goTo(47.62988,-122.16608,12)">Bellevue</a></li>
       <li><a href="javascript:goTo(47.38673,-122.22153,12)">S King Co</a></li>
       <li><a href="javascript:goTo(47.24428,-122.43851,12)">Tacoma</a></li>
-      <li><a href="javascript:goTo(47.03293,-122.86285,13)">Olympia</a></li>
+      <li><a href="javascript:goTo(47.03293,-122.86285,12)">Olympia</a></li>
     </ul>
   </div>
   

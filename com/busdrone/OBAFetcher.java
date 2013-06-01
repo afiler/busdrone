@@ -3,6 +3,7 @@ package com.busdrone;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import com.cedarsoftware.util.io.JsonWriter;
+import com.google.gson.Gson;
 
 import nu.xom.Builder;
 import nu.xom.Document;
@@ -12,9 +13,11 @@ import nu.xom.Nodes;
 import redis.clients.jedis.Jedis;
 
 public class OBAFetcher extends Fetcher {
+	public static String dataProvider = "com.onebusaway";
+	
 	public static String endpointUrlFmt = "http://api.onebusaway.org/api/where/vehicles-for-agency/%s.xml?key=TEST%s";
 	//public static String[] agencyIds = {"1", "3", "19", "KMD", "40", "35", "23", "sch", "29"};
-	public static String[] agencyIds = {"3", "19"}; //{"3", "40", "29"};
+	public static String[] agencyIds = {"1", "3", "19"}; //{"3", "40", "29"};
 	
 	public Hashtable<String, BusReport> busReports = new Hashtable<String, BusReport>();
 	
@@ -24,11 +27,13 @@ public class OBAFetcher extends Fetcher {
 	
 	public int runCount = 0;
 	public int refreshReferenceInterval = 6;
+
+	Gson gson = new Gson();
 	
 	public OBAFetcher(BusReportServer s) {
 		super();
 		server = s;
-		sleepSecs = 10;
+		sleepSecs = 10; // XXX XXXXXXXX
 	}
 	
 	@Override
@@ -71,6 +76,7 @@ public class OBAFetcher extends Fetcher {
 				try {
 					BusReport report = new BusReport();
 					Element vehicleStatus = (Element)vehicleStatuses.get(i);
+					report.dataProvider = dataProvider;
 					report.vehicleId = vehicleStatus.query("vehicleId").get(0).getValue();
 					report.tripId = vehicleStatus.query("tripId").get(0).getValue();
 					report.routeId = tripIdsRouteIds.get(report.tripId)+"";
@@ -81,7 +87,7 @@ public class OBAFetcher extends Fetcher {
 					report.age = reportTimestamp - report.timestamp;
 
 					if (runCount == 0 || !report.equals(busReports.get(report.vehicleId))) {
-						reports.add(report); updated++;
+						reports.add(report.cleanup()); updated++;
 					}
 					
 					busReports.put(report.vehicleId, report);
@@ -95,7 +101,9 @@ public class OBAFetcher extends Fetcher {
 			}
 		}
 		
-		String json = JsonWriter.objectToJson(reports.toArray());
+		String json = gson.toJson(reports.toArray());
+		System.out.println(json);
+
 		server.sendToAll(json);
 		
 		if (runCount == 0)

@@ -9,13 +9,17 @@ import nu.xom.Nodes;
 
 import redis.clients.jedis.Jedis;
 
-import com.cedarsoftware.util.io.JsonWriter;
+import com.google.gson.Gson;
 
 import com.busdrone.Fetcher;
 
 public class NextBusFetcher extends Fetcher {
+	public static String operator = "metro.kingcounty.gov";
+	public static String dataProvider = "nextbus.com";
+	public static String vehicleType = "streetcar";
 	public static String endpointUrl = "http://webservices.nextbus.com/service/publicXMLFeed?command=vehicleLocations&a=seattle-sc&r=southlakeunion&t=0";
 	public static String typeId = "slu";
+	Gson gson = new Gson();
 	
 	public NextBusFetcher(BusReportServer s) {
 		super();
@@ -40,6 +44,9 @@ public class NextBusFetcher extends Fetcher {
 				Element vehicle = (Element)vehicles.get(i);
 				BusReport report = new BusReport();
 				
+				report.operator = operator;
+				report.dataProvider = dataProvider;
+				report.vehicleType = vehicleType;
 				report.coach = vehicle.getAttribute("id").getValue();
 				report.vehicleId = typeId+'_'+report.coach;
 				report.destination = vehicle.getAttribute("dirTag").getValue();
@@ -57,14 +64,15 @@ public class NextBusFetcher extends Fetcher {
 		        report.color = report.color + "";
 		        report.route = report.route + "";
 				
-				reports.add(report);
+				reports.add(report.cleanup());
 				//busReports.put(report.vehicleId, report);
 			} catch (Exception e) {
 				
 			}
 		}
 
-		String json = JsonWriter.objectToJson(reports.toArray());
+		String json = gson.toJson(reports.toArray());
+		System.out.println(json);
 		server.sendToAll(json);
 	}
 }
