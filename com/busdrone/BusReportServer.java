@@ -5,6 +5,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.java_websocket.WebSocket;
@@ -20,7 +21,7 @@ import com.busdrone.NextBusFetcher;
 import com.busdrone.BusViewFetcher;
 
 public class BusReportServer extends WebSocketServer {
-	public EventStore eventStore = new EventStore();
+	public HashMap<String,Event> eventStore = new HashMap<String,Event>();
 	
 	public static void main( String[] args ) throws InterruptedException , IOException {
 		WebSocketImpl.DEBUG = false;
@@ -67,6 +68,17 @@ public class BusReportServer extends WebSocketServer {
 	@Override
 	public void onOpen(WebSocket conn, ClientHandshake handshake) {		
 		System.out.println( "new connection: " + handshake.getResourceDescriptor() );
+		
+		Event event = new Event("init");
+		
+		for (Map.Entry<String, Event> entry : eventStore.entrySet()) {
+			event.addVehicle(entry.getValue().vehicle);
+		}
+		
+		String json = event.toJson();
+		System.out.println(json);
+		conn.send(json);
+		
 		/*	StringBuilder builder = new StringBuilder();
 			builder.append("[");		
 			for (String key : db.hkeys("buses")) {

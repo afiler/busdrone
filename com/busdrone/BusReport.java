@@ -1,5 +1,7 @@
 package com.busdrone;
 
+import java.util.HashMap;
+
 import redis.clients.jedis.Jedis;
 
 public class BusReport {
@@ -48,14 +50,21 @@ public class BusReport {
 		return toEvent().toJson();
 	}
 	
-	public String syncAndDump(EventStore eventStore) {		
+	public String syncAndDump(HashMap<String,Event> eventStore) {		
 		cleanup();
 		String key = "com.busdrone.reports/"+uid;
 		
-		BusReport oldBus = (BusReport)eventStore.get(key);
+		Event event = (Event)eventStore.get(key);
 		
-		if (oldBus == null || !oldBus.equals(this)) {
-			eventStore.put(key, this);
+		if (event == null) {
+			eventStore.put(key, this.toEvent());
+			return this.toEventJson();
+		}
+		
+		BusReport oldBus = event.vehicle;
+
+		if (!oldBus.equals(this)) {
+			event.vehicle = this;
 			return this.toEventJson();
 		} else {
 			return null;

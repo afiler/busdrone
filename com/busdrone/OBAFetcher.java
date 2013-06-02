@@ -1,6 +1,7 @@
 package com.busdrone;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 import com.cedarsoftware.util.io.JsonWriter;
 import com.google.gson.Gson;
@@ -38,7 +39,7 @@ public class OBAFetcher extends Fetcher {
 	}
 	
 	@Override
-	public void runOnce(EventStore eventStore) throws Exception {
+	public void runOnce(HashMap<String,Event> eventStore) throws Exception {
 		int updated=0;
 		ArrayList<BusReport> reports = new ArrayList<BusReport>();
 		Builder parser = new Builder();

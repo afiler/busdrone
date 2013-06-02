@@ -227,9 +227,14 @@
 
     function onWsMessage(evt) {
       var data = JSON.parse(evt.data);
+      console.log(data.type);
       
       if (data.type == 'update_vehicle') {
         updateBus(data.vehicle);
+      } else if (data.type == 'init') {
+        data.vehicles.forEach(function(vehicle) {
+          updateBus(vehicle);
+        });
       }
       
       updateInfo();

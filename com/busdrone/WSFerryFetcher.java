@@ -7,6 +7,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -33,7 +34,7 @@ public class WSFerryFetcher extends Fetcher {
 	}
 	
 	@Override
-	public void runOnce(EventStore eventStore) throws Exception {
+	public void runOnce(HashMap<String,Event> eventStore) throws Exception {
 		URLConnection connection = new URL(endpointUrl).openConnection();
 		ArrayList<BusReport> reports = new ArrayList<BusReport>();
 		JsonParser parser = new JsonParser();

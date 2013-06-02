@@ -1,5 +1,7 @@
 package com.busdrone;
 
+import java.util.HashMap;
+
 public abstract class Fetcher extends Thread {
 	int sleepSecs = 0;
 	BusReportServer server;
@@ -21,5 +23,5 @@ public abstract class Fetcher extends Thread {
 		}
 	}
 	
-	public abstract void runOnce(EventStore eventStore) throws Exception;
+	public abstract void runOnce(HashMap<String,Event> eventStore) throws Exception;
 }

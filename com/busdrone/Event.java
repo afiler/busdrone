@@ -20,5 +20,10 @@ public class Event {
 	public String toJson() {
 		return gson.toJson(this);
 	}
+	
+	public void addVehicle(BusReport busReport) {
+		if (vehicles == null) vehicles = new ArrayList<BusReport>();
+		vehicles.add(busReport);
+	}
 
 }

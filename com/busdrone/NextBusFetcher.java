@@ -1,6 +1,7 @@
 package com.busdrone;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import nu.xom.Builder;
 import nu.xom.Document;
@@ -28,7 +29,7 @@ public class NextBusFetcher extends Fetcher {
 	}
 
 	@Override
-	public void runOnce(EventStore eventStore) throws Exception {
+	public void runOnce(HashMap<String,Event> eventStore) throws Exception {
 		//ArrayList<BusReport> reports = new ArrayList<BusReport>();
 		
 		Builder parser = new Builder();
