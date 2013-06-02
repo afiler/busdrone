@@ -1,6 +1,5 @@
 package com.busdrone;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 import nu.xom.Builder;
@@ -8,15 +7,13 @@ import nu.xom.Document;
 import nu.xom.Element;
 import nu.xom.Nodes;
 
-import redis.clients.jedis.Jedis;
-
 import com.google.gson.Gson;
 
 import com.busdrone.Fetcher;
 
 public class NextBusFetcher extends Fetcher {
 	public static String operator = "metro.kingcounty.gov";
-	public static String dataProvider = "nextbus.com";
+	public static String dataProvider = "com.nextbus";
 	public static String vehicleType = "streetcar";
 	public static String endpointUrl = "http://webservices.nextbus.com/service/publicXMLFeed?command=vehicleLocations&a=seattle-sc&r=southlakeunion&t=0";
 	public static String typeId = "slu";
@@ -29,7 +26,7 @@ public class NextBusFetcher extends Fetcher {
 	}
 
 	@Override
-	public void runOnce(HashMap<String,Event> eventStore) throws Exception {
+	public void runOnce(HashMap<String,BusReport> reportStore) throws Exception {
 		//ArrayList<BusReport> reports = new ArrayList<BusReport>();
 		
 		Builder parser = new Builder();
@@ -61,8 +58,8 @@ public class NextBusFetcher extends Fetcher {
 				report.lat = Double.parseDouble(vehicle.getAttribute("lat").getValue());
 				report.lon = Double.parseDouble(vehicle.getAttribute("lon").getValue());
 				report.heading = Double.parseDouble(vehicle.getAttribute("heading").getValue());
-				report.age = Long.parseLong(vehicle.getAttribute("secsSinceReport").getValue());
-				report.timestamp = reportTimestamp - (report.age * 1000);
+				report.age = Long.parseLong(vehicle.getAttribute("secsSinceReport").getValue()) * 1000;
+				report.timestamp = reportTimestamp - (report.age);
 		        if (report.coach.equals("1")) report.color = "#b2df0000"; //"rgba(223,0,0,0.7)";
 		        else if (report.coach.equals("2")) report.color = "#b2df7f00"; //"rgba(223,127,0,0.7)";
 		        else if (report.coach.equals("3")) report.color = "#b2df007f"; //"rgba(127,0,223,0.7)";
@@ -75,7 +72,7 @@ public class NextBusFetcher extends Fetcher {
 				//reports.add(report.cleanup());
 				//busReports.put(report.vehicleId, report);
 		        //server.sendToAll(report.toEventJson());
-		        server.sendToAll(report.syncAndDump(eventStore));
+		        server.sendToAll(report.syncAndDump(reportStore));
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

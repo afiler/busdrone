@@ -24,7 +24,7 @@ public class BusReport {
 	double lat;
 	double lon;
 	double heading;
-	boolean inService; // XXX
+	boolean inService = true; // XXX
 	long timestamp = java.lang.Long.MIN_VALUE;
 	long age = java.lang.Long.MIN_VALUE;
 	
@@ -50,25 +50,48 @@ public class BusReport {
 		return toEvent().toJson();
 	}
 	
-	public String syncAndDump(HashMap<String,Event> eventStore) {		
+	public boolean isDeletable() {
+		//return Math.abs(lat) > 89 || Math.abs(lon) > 89 || !inService || age >= 1000*60*10;
+		
+		boolean retval = Math.abs(lat) > 89 || Math.abs(lon) > 179 || !inService || age >= 1000*60*10;
+		
+		/*if (retval) {
+			System.out.println("["+uid+"] "+
+					" Math.abs(lat) > 89:"+(Math.abs(lat) > 89)+
+					" Math.abs(lon) > 179:"+(Math.abs(lon) > 179) +
+					" !inService:"+!inService+
+					" age >= 1000*60*10:"+(age >= 1000*60*10));
+		}*/
+		
+		return retval;
+	}
+	
+	public String syncAndDump(HashMap<String,BusReport> reportStore) {		
 		cleanup();
+
 		String key = "com.busdrone.reports/"+uid;
 		
-		Event event = (Event)eventStore.get(key);
+		BusReport oldBus = (BusReport)reportStore.get(key);
 		
-		if (event == null) {
-			eventStore.put(key, this.toEvent());
+		if (isDeletable()) {
+			if (oldBus != null) {
+				Event event = new Event("remove_vehicle");
+				event.uid = uid;
+				reportStore.remove(key);
+				String json = event.toJson();
+				System.out.println(json);
+				return json;
+			} else {
+				return null;
+			}
+		}
+				
+		if (oldBus == null || !oldBus.equals(this)) {
+			reportStore.put(key, this);
 			return this.toEventJson();
 		}
-		
-		BusReport oldBus = event.vehicle;
 
-		if (!oldBus.equals(this)) {
-			event.vehicle = this;
-			return this.toEventJson();
-		} else {
-			return null;
-		}
+		return null;
 	}
 	
 	@Override public boolean equals(Object aThat) {		

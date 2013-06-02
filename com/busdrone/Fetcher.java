@@ -10,7 +10,7 @@ public abstract class Fetcher extends Thread {
 	public void run() {
 		while (true) {
 			try {
-				this.runOnce(server.eventStore);
+				this.runOnce(server.reportStore);
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
@@ -23,5 +23,5 @@ public abstract class Fetcher extends Thread {
 		}
 	}
 	
-	public abstract void runOnce(HashMap<String,Event> eventStore) throws Exception;
+	public abstract void runOnce(HashMap<String,BusReport> reportStore) throws Exception;
 }

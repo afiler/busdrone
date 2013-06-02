@@ -39,7 +39,7 @@ public class OBAFetcher extends Fetcher {
 	}
 	
 	@Override
-	public void runOnce(HashMap<String,Event> eventStore) throws Exception {
+	public void runOnce(HashMap<String,BusReport> reportStore) throws Exception {
 		int updated=0;
 		ArrayList<BusReport> reports = new ArrayList<BusReport>();
 		Builder parser = new Builder();
@@ -103,7 +103,7 @@ public class OBAFetcher extends Fetcher {
 					//}
 					
 					//busReports.put(report.vehicleId, report);
-					server.sendToAll(report.syncAndDump(eventStore));
+					server.sendToAll(report.syncAndDump(reportStore));
 					
 				} catch (Exception e) {
 					//System.out.println(vehicleStatuses.get(i));

@@ -227,7 +227,6 @@
 
     function onWsMessage(evt) {
       var data = JSON.parse(evt.data);
-      console.log(data.type);
       
       if (data.type == 'update_vehicle') {
         updateBus(data.vehicle);
@@ -241,8 +240,6 @@
     }
     
     function updateBus(bus) {
-      //console.log(bus);
-      
       if (bus.lat > 89 || bus.lat < -89 || !bus.route || bus.route == 'null' ||
           getFreshness(bus) == 'dead' ) {
         deleteBus(bus);

@@ -5,7 +5,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.java_websocket.WebSocket;
@@ -13,15 +12,12 @@ import org.java_websocket.WebSocketImpl;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
 
 import com.busdrone.NextBusFetcher;
 import com.busdrone.BusViewFetcher;
 
 public class BusReportServer extends WebSocketServer {
-	public HashMap<String,Event> eventStore = new HashMap<String,Event>();
+	public HashMap<String,BusReport> reportStore = new HashMap<String,BusReport>();
 	
 	public static void main( String[] args ) throws InterruptedException , IOException {
 		WebSocketImpl.DEBUG = false;
@@ -71,27 +67,12 @@ public class BusReportServer extends WebSocketServer {
 		
 		Event event = new Event("init");
 		
-		for (Map.Entry<String, Event> entry : eventStore.entrySet()) {
-			event.addVehicle(entry.getValue().vehicle);
+		for (Map.Entry<String, BusReport> entry : reportStore.entrySet()) {
+			event.addVehicle(entry.getValue());
 		}
 		
 		String json = event.toJson();
-		System.out.println(json);
 		conn.send(json);
-		
-		/*	StringBuilder builder = new StringBuilder();
-			builder.append("[");		
-			for (String key : db.hkeys("buses")) {
-				if (builder.length() > 1) builder.append(",");
-				builder.append(db.get(key));
-			}
-			builder.append("]");
-			synchronized (conn) {
-				conn.send(builder.toString());
-				conn.send(db.get("com.busdrone.reports.nextbus"));
-				conn.send(db.get("com.busdrone.reports.wsferry"));
-				conn.send(db.get("com.busdrone.reports.onebusaway"));
-		*/
 	}
 
 	@Override

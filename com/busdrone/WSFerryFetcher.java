@@ -23,7 +23,8 @@ public class WSFerryFetcher extends Fetcher {
 	public static String vehicleType = "ferry";
 	public static String color = "#b2017359"; //"rgba(1,115,89,0.7)";
 	
-	public static SimpleDateFormat wsfDatetimeFormat = new SimpleDateFormat("M/d   H:m");
+	public static SimpleDateFormat wsfDatetimeFormat = new SimpleDateFormat("MM/dd/yyyy hh:mm:ss a");
+	public static SimpleDateFormat vesselDatetimeFormat = new SimpleDateFormat("M/d   H:m");
 
 	Gson gson = new Gson();
 	
@@ -34,15 +35,16 @@ public class WSFerryFetcher extends Fetcher {
 	}
 	
 	@Override
-	public void runOnce(HashMap<String,Event> eventStore) throws Exception {
+	public void runOnce(HashMap<String,BusReport> reportStore) throws Exception {
 		URLConnection connection = new URL(endpointUrl).openConnection();
-		ArrayList<BusReport> reports = new ArrayList<BusReport>();
 		JsonParser parser = new JsonParser();
 		
-		for (JsonElement element :
-			parser.parse(new InputStreamReader(connection.getInputStream()))
-			.getAsJsonObject().getAsJsonArray("vessellist"))
-		{
+		JsonObject jsonResponse = parser.parse(new InputStreamReader(connection.getInputStream()))
+				.getAsJsonObject();
+		
+		long mainTimestamp = wsfDatetimeFormat.parse(jsonResponse.get("timestamp").getAsString()).getTime();
+		
+		for (JsonElement element : jsonResponse.getAsJsonArray("vessellist")) {
 			if (!element.isJsonObject()) continue;
 			
 			try {
@@ -65,27 +67,24 @@ public class WSFerryFetcher extends Fetcher {
 				report.lon = o.get("lon").getAsDouble();
 				report.speedMph = o.get("speed").getAsInt();
 				report.heading = o.get("head").getAsInt();
-				report.timestamp = parseDatetime(o.get("datetime").getAsString());
+				report.timestamp = parseVesselDatetime(o.get("datetime").getAsString());
+				report.age = mainTimestamp - report.timestamp;
 				
-				//reports.add(report.cleanup());
-				//server.sendToAll(report.toEventJson());
+				server.sendToAll(report.syncAndDump(reportStore));
 				
-				server.sendToAll(report.syncAndDump(eventStore));
+			} catch (Exception e) {
 				
-			} catch (Exception e) {}
+			}
 			
 		}
-		
-		//String json = gson.toJson(reports.toArray());
-		//server.sendToAll(json);
-		//db.set("com.busdrone.reports.wsferry", json);
+
 	}
 	
 	@SuppressWarnings("deprecation")
-	public long parseDatetime(String s) {
+	public long parseVesselDatetime(String s) {
 		Date now = new Date();
 		try {
-			Date d = wsfDatetimeFormat.parse(s);
+			Date d = vesselDatetimeFormat.parse(s);
 			int year = now.getYear();
 			if (d.getMonth() == 12 && d.getDay() == 31 && now.getMonth() == 1)
 				year--;
