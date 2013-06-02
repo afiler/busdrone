@@ -49,7 +49,12 @@ public class NextBusFetcher extends Fetcher {
 				report.vehicleType = vehicleType;
 				report.coach = vehicle.getAttribute("id").getValue();
 				report.vehicleId = typeId+'_'+report.coach;
-				report.destination = vehicle.getAttribute("dirTag").getValue();
+				try {
+					report.destination = vehicle.getAttribute("dirTag").getValue();
+				} catch (Exception e) {
+					report.destination = "?";
+				}
+				
 				//report.route = vehicle.getAttribute("routeTag").getValue();
 				report.route = "SLU";
 				report.lat = Double.parseDouble(vehicle.getAttribute("lat").getValue());

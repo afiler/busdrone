@@ -24,7 +24,7 @@ public class OBAFetcher extends Fetcher {
 	public Hashtable<String, String> tripIdsRoutes = new Hashtable<String, String>();
 	public Hashtable<String, String> tripIdsRouteIds = new Hashtable<String, String>();
 	public Hashtable<String, String> routeIdsRoutes = new Hashtable<String, String>();
-	public Hashtable<String, String> routeIdsDestinations = new Hashtable<String, String>();
+	public Hashtable<String, String> tripIdsDestinations = new Hashtable<String, String>();
 	
 	public int runCount = 0;
 	public int refreshReferenceInterval = 6;
@@ -59,9 +59,6 @@ public class OBAFetcher extends Fetcher {
 					routeIdsRoutes.put(
 							route.query("id").get(0).getValue(),
 							route.query("shortName").get(0).getValue());
-					routeIdsDestinations.put(
-							route.query("id").get(0).getValue(),
-							route.query("description").get(0).getValue());
 				} catch (IndexOutOfBoundsException e) {}
 			}
 			
@@ -72,6 +69,9 @@ public class OBAFetcher extends Fetcher {
 					tripIdsRouteIds.put(
 							trip.query("id").get(0).getValue(),
 							trip.query("routeId").get(0).getValue());
+					tripIdsDestinations.put(
+							trip.query("id").get(0).getValue(),
+							trip.query("tripHeadsign").get(0).getValue());
 				} catch (IndexOutOfBoundsException e) {}
 		    }
 			
@@ -87,7 +87,7 @@ public class OBAFetcher extends Fetcher {
 					report.tripId = vehicleStatus.query("tripId").get(0).getValue();
 					report.routeId = tripIdsRouteIds.get(report.tripId)+"";
 					report.route = routeIdsRoutes.get(report.routeId)+"";
-					report.destination = routeIdsDestinations.get(report.routeId)+"";
+					report.destination = tripIdsDestinations.get(report.tripId)+"";
 					report.lat = Double.parseDouble(vehicleStatus.query("location/lat").get(0).getValue());
 					report.lon = Double.parseDouble(vehicleStatus.query("location/lon").get(0).getValue());
 					report.heading = Double.parseDouble(vehicleStatus.query("tripStatus/orientation").get(0).getValue());
