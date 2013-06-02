@@ -93,6 +93,8 @@ public class OBAFetcher extends Fetcher {
 					report.heading = Double.parseDouble(vehicleStatus.query("tripStatus/orientation").get(0).getValue());
 					report.timestamp = Long.parseLong(vehicleStatus.query("lastUpdateTime").get(0).getValue());
 					report.age = reportTimestamp - report.timestamp;
+					
+					report.inService = true;
 
 					//if (runCount == 0 || !report.equals(busReports.get(report.vehicleId))) {
 					//	reports.add(report.cleanup()); updated++;

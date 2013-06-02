@@ -227,28 +227,16 @@
 
     function onWsMessage(evt) {
       var data = JSON.parse(evt.data);
-      //if (data.items) data = data.items;
-      //console.log(evt.data.length + ' bytes, ' + data.length + ' items');
-
-      var identifier = data['@type'] || data['appurl'];
-      if (feedAdapters[identifier]) {
-        feedAdapters[identifier](data);
-      } else {
-        data.forEach(updateBus);
-      }
       
-      if (!fetchedOnce) {
-        fetchedOnce = true;
-        mapCleanup();
+      if (data.type == 'update_vehicle') {
+        updateBus(data.vehicle);
       }
       
       updateInfo();
     }
     
     function updateBus(bus) {
-      if (busReportAdapters[bus['@type']]) {
-        bus = busReportAdapters[bus['@type']](bus);
-      }
+      //console.log(bus);
       
       if (bus.lat > 89 || bus.lat < -89 || !bus.route || bus.route == 'null' ||
           getFreshness(bus) == 'dead' ) {
@@ -256,9 +244,7 @@
         return;
       }      
       
-      bus.coach = bus.coach || bus.vehicleId;
-      bus.uid = bus.vehicleId || bus.coach;
-      bus.age = bus.age || (new Date() - bus.timestamp);
+      //bus.age = bus.age || (new Date() - bus.timestamp);
       
       if (bus.color && typeof bus.color == 'string' && bus.color != '')
         bus.normalColor = bus.color;
@@ -348,39 +334,6 @@
         return 'stale';
       else
         return 'ok';
-    }
-    
-    
-    var feedAdapters = {
-      "http://www.wsdot.wa.gov/ferries/vesselwatch": function(data) {
-        data.vessellist.forEach(function(bus) {
-          bus.coach = 'WSF'+bus.vesselID;
-          bus.heading = bus.head;
-          bus.normalColor = 'rgba(1,115,89,0.7)';
-
-          var d = new Date(bus.datetime);
-          bus.timestamp = new Date();
-          bus.timestamp.setMonth(d.getMonth());
-          bus.timestamp.setDate(d.getDate());
-          bus.timestamp.setHours(d.getHours());
-          bus.timestamp.setMinutes(d.getMinutes());
-          bus.timestamp.setSeconds(0);
-
-          if (bus.inservice == 'True') {
-            updateBus(bus);
-          } else {
-            deleteBus(bus);
-          }
-        });
-      }
-    }
-
-    var busReportAdapters = {
-      "its.app.busview.BusReport": function(bus) {
-        bus.normalColor = 'rgba(112,148,255,0.7)';
-        bus.vehicleId = '1_'+bus.coach;
-        return bus;
-      }
     }
     
     function deleteBus(bus) {

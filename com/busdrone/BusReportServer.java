@@ -41,7 +41,7 @@ public class BusReportServer extends WebSocketServer {
 
 	public void sendToAll( String text ) {
 		if (text == null) return;
-		System.out.println(text);
+		//System.out.println(text);
 		Collection<WebSocket> con = connections();
 		synchronized ( con ) {
 			for( WebSocket c : con ) {

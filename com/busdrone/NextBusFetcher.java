@@ -60,6 +60,8 @@ public class NextBusFetcher extends Fetcher {
 		        if (report.coach.equals("1")) report.color = "rgba(223,0,0,0.7)";
 		        else if (report.coach.equals("2")) report.color = "rgba(223,127,0,0.7)";
 		        else if (report.coach.equals("3")) report.color = "rgba(127,0,223,0.7)";
+		        
+		        report.inService = true;
 
 		        report.color = report.color + "";
 		        report.route = report.route + "";
