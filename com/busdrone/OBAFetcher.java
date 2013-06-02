@@ -82,6 +82,7 @@ public class OBAFetcher extends Fetcher {
 					Element vehicleStatus = (Element)vehicleStatuses.get(i);
 					//System.out.println(vehicleStatus.getValue());
 					report.vehicleType = "bus";
+					report.color = "#b27094ff";
 					report.dataProvider = dataProvider;
 					report.vehicleId = vehicleStatus.query("vehicleId").get(0).getValue();
 					report.tripId = vehicleStatus.query("tripId").get(0).getValue();

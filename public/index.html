@@ -247,7 +247,7 @@
       //bus.age = bus.age || (new Date() - bus.timestamp);
       
       if (bus.color && typeof bus.color == 'string' && bus.color != '')
-        bus.normalColor = bus.color;
+        bus.normalColor = hexToRgba(bus.color);
       else
         bus.normalColor = 'rgba(112,148,255,0.7)';
                   
@@ -382,8 +382,9 @@
       $('#route-info-data')[0].innerHTML = '\
         <table class="table table-bordered">\
           <tr><th>Route</th><td>'+bus.route+'</td></tr>\
+          <tr><th>To</th><td>'+bus.destination+'</td></tr>\
           <tr><th>Vehicle</th><td>'+bus.coach+'</td></tr>\
-          <tr><th>Heading</th><td>'+getDir(bus.heading)+' ('+bus.heading+'°)</td></tr>\
+          <tr><th>Heading</th><td>'+getDir(bus.heading)+' ('+Math.round(bus.heading)+'°)</td></tr>\
           <tr><th>Last seen</th><td>'+(new Date(bus.timestamp)).toLocaleTimeString()+'</td></tr>\
         </table>';
       
@@ -553,6 +554,11 @@
       context.fill();
             
       return canvas;
+    }
+    
+    function hexToRgba(hex) {
+        var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return "rgba("+parseInt(result[2], 16)+","+parseInt(result[3], 16)+","+parseInt(result[4], 16)+","+parseInt(result[1], 16)/0xff+")";
     }
 
     function onWsError(evt) {

@@ -20,7 +20,7 @@ public class WSFerryFetcher extends Fetcher {
 	public static String dataProvider = "com.wsdot.vesselwatch";
 	public static String operator = "com.wsdot";
 	public static String vehicleType = "ferry";
-	public static String color = "rgba(1,115,89,0.7)";
+	public static String color = "#b2017359"; //"rgba(1,115,89,0.7)";
 	
 	public static SimpleDateFormat wsfDatetimeFormat = new SimpleDateFormat("M/d   H:m");
 

@@ -62,9 +62,9 @@ public class NextBusFetcher extends Fetcher {
 				report.heading = Double.parseDouble(vehicle.getAttribute("heading").getValue());
 				report.age = Long.parseLong(vehicle.getAttribute("secsSinceReport").getValue());
 				report.timestamp = reportTimestamp - (report.age * 1000);
-		        if (report.coach.equals("1")) report.color = "rgba(223,0,0,0.7)";
-		        else if (report.coach.equals("2")) report.color = "rgba(223,127,0,0.7)";
-		        else if (report.coach.equals("3")) report.color = "rgba(127,0,223,0.7)";
+		        if (report.coach.equals("1")) report.color = "#b2df0000"; //"rgba(223,0,0,0.7)";
+		        else if (report.coach.equals("2")) report.color = "#b2df7f00"; //"rgba(223,127,0,0.7)";
+		        else if (report.coach.equals("3")) report.color = "#b2df007f"; //"rgba(127,0,223,0.7)";
 		        
 		        report.inService = true;
 
