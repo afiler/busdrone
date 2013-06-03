@@ -1,7 +1,5 @@
 package com.busdrone;
 
-import java.util.HashMap;
-
 import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.Element;
@@ -26,7 +24,7 @@ public class NextBusFetcher extends Fetcher {
 	}
 
 	@Override
-	public void runOnce(HashMap<String,BusReport> reportStore) throws Exception {
+	public void runOnce() throws Exception {
 		//ArrayList<BusReport> reports = new ArrayList<BusReport>();
 		
 		Builder parser = new Builder();
@@ -62,23 +60,17 @@ public class NextBusFetcher extends Fetcher {
 				report.timestamp = reportTimestamp - (report.age);
 		        if (report.coach.equals("1")) report.color = "#b2df0000"; //"rgba(223,0,0,0.7)";
 		        else if (report.coach.equals("2")) report.color = "#b2df7f00"; //"rgba(223,127,0,0.7)";
-		        else if (report.coach.equals("3")) report.color = "#b2df007f"; //"rgba(127,0,223,0.7)";
+		        else if (report.coach.equals("3")) report.color = "#b27f00df"; //"rgba(127,0,223,0.7)";
 		        
 		        report.inService = true;
 
 		        report.color = report.color + "";
 		        report.route = report.route + "";
 				
-				//reports.add(report.cleanup());
-				//busReports.put(report.vehicleId, report);
-		        //server.sendToAll(report.toEventJson());
-		        server.sendToAll(report.syncAndDump(reportStore));
+		        this.syncAndSendReport(report);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-
-		//String json = gson.toJson(reports.toArray());
-		//server.sendToAll(json);
 	}
 }

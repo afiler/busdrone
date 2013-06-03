@@ -45,7 +45,7 @@ public class BusViewFetcher extends Fetcher {
 		server = s;
 	}
 	
-	public void runOnce(Jedis db) throws Exception {
+	public void runOnce() throws Exception {
 		if (connection == null) {
 			connection = new URL(endpointUrl).openConnection();
 			response = connection.getInputStream();

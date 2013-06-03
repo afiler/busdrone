@@ -34,6 +34,7 @@ public class BusReportServer extends WebSocketServer {
 		//new BusViewFetcher(s).start();
 		new WSFerryFetcher(s).start();
 		new OBAFetcher(s).start();
+		new Reaper(s).start();
 	}
 
 	public void sendToAll( String text ) {

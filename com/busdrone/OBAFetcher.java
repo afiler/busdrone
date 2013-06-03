@@ -1,17 +1,12 @@
 package com.busdrone;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Hashtable;
-import com.cedarsoftware.util.io.JsonWriter;
 import com.google.gson.Gson;
 
 import nu.xom.Builder;
 import nu.xom.Document;
 import nu.xom.Element;
 import nu.xom.Nodes;
-
-import redis.clients.jedis.Jedis;
 
 public class OBAFetcher extends Fetcher {
 	public static String dataProvider = "com.onebusaway";
@@ -39,9 +34,7 @@ public class OBAFetcher extends Fetcher {
 	}
 	
 	@Override
-	public void runOnce(HashMap<String,BusReport> reportStore) throws Exception {
-		int updated=0;
-		ArrayList<BusReport> reports = new ArrayList<BusReport>();
+	public void runOnce() throws Exception {
 		Builder parser = new Builder();
 		String includeReferences = runCount == 0 ? "" : "&includeReferences=false";
 		
@@ -98,29 +91,13 @@ public class OBAFetcher extends Fetcher {
 					
 					report.inService = true;
 
-					//if (runCount == 0 || !report.equals(busReports.get(report.vehicleId))) {
-					//	reports.add(report.cleanup()); updated++;
-					//}
-					
-					//busReports.put(report.vehicleId, report);
-					server.sendToAll(report.syncAndDump(reportStore));
+					syncAndSendReport(report);
 					
 				} catch (Exception e) {
 					//System.out.println(vehicleStatuses.get(i));
-					//e.printStackTrace();
 				}
 
 			}
 		}
-		
-		//String json = gson.toJson(reports.toArray());
-		//server.sendToAll(json);
-		
-		//if (runCount == 0)
-		//	db.set("com.busdrone.reports.onebusaway", JsonWriter.objectToJson(reports.toArray()));
-
-		//if (++runCount >= refreshReferenceInterval) runCount = 0;
-		
-		//System.out.println("OBAFetcher complete. "+updated+" updated");
 	}
 }

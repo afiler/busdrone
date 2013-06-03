@@ -5,9 +5,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -35,7 +33,7 @@ public class WSFerryFetcher extends Fetcher {
 	}
 	
 	@Override
-	public void runOnce(HashMap<String,BusReport> reportStore) throws Exception {
+	public void runOnce() throws Exception {
 		URLConnection connection = new URL(endpointUrl).openConnection();
 		JsonParser parser = new JsonParser();
 		
@@ -63,6 +61,7 @@ public class WSFerryFetcher extends Fetcher {
 				report.route = o.get("route").getAsString();
 				report.prevStop = o.get("lastdock").getAsString();
 				report.nextStop = o.get("aterm").getAsString();
+				report.destination = o.get("aterm").getAsString();
 				report.lat = o.get("lat").getAsDouble();
 				report.lon = o.get("lon").getAsDouble();
 				report.speedMph = o.get("speed").getAsInt();
@@ -70,7 +69,7 @@ public class WSFerryFetcher extends Fetcher {
 				report.timestamp = parseVesselDatetime(o.get("datetime").getAsString());
 				report.age = mainTimestamp - report.timestamp;
 				
-				server.sendToAll(report.syncAndDump(reportStore));
+				this.syncAndSendReport(report);
 				
 			} catch (Exception e) {
 				

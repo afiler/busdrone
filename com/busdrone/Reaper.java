@@ -1,6 +1,5 @@
 package com.busdrone;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class Reaper extends Fetcher {
@@ -12,10 +11,10 @@ public class Reaper extends Fetcher {
 	}
 
 	@Override
-	public void runOnce(HashMap<String, BusReport> reportStore) throws Exception {
-		for (Map.Entry<String, BusReport> entry : reportStore.entrySet()) {
+	public void runOnce() throws Exception {
+		for (Map.Entry<String, BusReport> entry : server.reportStore.entrySet()) {
 			BusReport report = entry.getValue();
-			if (report.isDeletable()) server.sendToAll(report.syncAndDump(reportStore));
+			if (report.isDeletable()) this.syncAndSendReport(report);
 		}
 	}
 

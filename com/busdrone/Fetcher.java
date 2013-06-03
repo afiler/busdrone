@@ -1,7 +1,5 @@
 package com.busdrone;
 
-import java.util.HashMap;
-
 public abstract class Fetcher extends Thread {
 	int sleepSecs = 0;
 	BusReportServer server;
@@ -10,7 +8,7 @@ public abstract class Fetcher extends Thread {
 	public void run() {
 		while (true) {
 			try {
-				this.runOnce(server.reportStore);
+				this.runOnce();
 			} catch (Exception e) {
 				e.printStackTrace();
 			} finally {
@@ -23,5 +21,33 @@ public abstract class Fetcher extends Thread {
 		}
 	}
 	
-	public abstract void runOnce(HashMap<String,BusReport> reportStore) throws Exception;
+	public void syncAndSendReport(BusReport report) {		
+		report.cleanup();
+
+		String key = "com.busdrone.reports/"+report.uid;
+		
+		BusReport oldBus = (BusReport)server.reportStore.get(key);
+		
+		if (report.isDeletable()) {
+			if (oldBus != null) {
+				Event event = new Event("remove_vehicle");
+				event.uid = report.uid;
+				server.reportStore.remove(key);
+				String json = event.toJson();
+				System.out.println(json);
+				server.sendToAll(json);
+			}
+			return;
+		}
+				
+		if (oldBus == null || !oldBus.equals(report)) {
+			server.reportStore.put(key, report);
+			//server.sendToAll(report.toEventJson());
+			String json = report.toEventJson();
+			//System.out.println(json);
+			server.sendToAll(json);
+		}
+	}
+	
+	public abstract void runOnce() throws Exception;
 }
