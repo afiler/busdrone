@@ -1,5 +1,7 @@
 package com.busdrone;
 
+import java.util.Date;
+
 public class VehicleReport implements Cloneable {
 	String uid;
 	String dataProvider;
@@ -22,7 +24,7 @@ public class VehicleReport implements Cloneable {
 	double heading;
 	boolean inService = true; // XXX
 	long timestamp = java.lang.Long.MIN_VALUE;
-	long age = java.lang.Long.MIN_VALUE;
+	long initialStaleness = java.lang.Long.MIN_VALUE;
 	
 	public void cleanup() {
 		if (vehicleId == null) vehicleId = coach;
@@ -47,7 +49,9 @@ public class VehicleReport implements Cloneable {
 	public boolean isDeletable() {
 		//return Math.abs(lat) > 89 || Math.abs(lon) > 89 || !inService || age >= 1000*60*10;
 		
-		boolean retval = Math.abs(lat) > 89 || Math.abs(lon) > 179 || !inService || age >= 1000*60*10;
+		long currentAge = (new Date()).getTime() - timestamp;
+		
+		boolean retval = Math.abs(lat) > 89 || Math.abs(lon) > 179 || !inService || currentAge >= 1000*60*10;
 		
 		/*if (retval) {
 			System.out.println("["+uid+"] "+

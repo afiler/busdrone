@@ -56,8 +56,8 @@ public class NextBusFetcher extends Fetcher {
 				report.lat = Double.parseDouble(vehicle.getAttribute("lat").getValue());
 				report.lon = Double.parseDouble(vehicle.getAttribute("lon").getValue());
 				report.heading = Double.parseDouble(vehicle.getAttribute("heading").getValue());
-				report.age = Long.parseLong(vehicle.getAttribute("secsSinceReport").getValue()) * 1000;
-				report.timestamp = reportTimestamp - (report.age);
+				report.initialStaleness = Long.parseLong(vehicle.getAttribute("secsSinceReport").getValue()) * 1000;
+				report.timestamp = reportTimestamp - (report.initialStaleness);
 		        if (report.coach.equals("1")) report.color = "#b2df0000"; //"rgba(223,0,0,0.7)";
 		        else if (report.coach.equals("2")) report.color = "#b2df7f00"; //"rgba(223,127,0,0.7)";
 		        else if (report.coach.equals("3")) report.color = "#b27f00df"; //"rgba(127,0,223,0.7)";

@@ -6,6 +6,7 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.WebSocketImpl;
@@ -17,7 +18,7 @@ import com.busdrone.NextBusFetcher;
 import com.busdrone.BusViewFetcher;
 
 public class ReportServer extends WebSocketServer {
-	public HashMap<String,VehicleReport> reportStore = new HashMap<String,VehicleReport>();
+	public Map<String,VehicleReport> reportStore = new ConcurrentHashMap<String,VehicleReport>();
 	
 	public static void main( String[] args ) throws InterruptedException , IOException {
 		WebSocketImpl.DEBUG = false;

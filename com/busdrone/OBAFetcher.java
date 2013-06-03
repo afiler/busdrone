@@ -87,7 +87,7 @@ public class OBAFetcher extends Fetcher {
 					report.lon = Double.parseDouble(vehicleStatus.query("location/lon").get(0).getValue());
 					report.heading = Double.parseDouble(vehicleStatus.query("tripStatus/orientation").get(0).getValue());
 					report.timestamp = Long.parseLong(vehicleStatus.query("lastUpdateTime").get(0).getValue());
-					report.age = reportTimestamp - report.timestamp;
+					report.initialStaleness = reportTimestamp - report.timestamp;
 					
 					report.inService = true;
 

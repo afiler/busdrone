@@ -67,7 +67,7 @@ public class WSFerryFetcher extends Fetcher {
 				report.speedMph = o.get("speed").getAsInt();
 				report.heading = o.get("head").getAsInt();
 				report.timestamp = parseVesselDatetime(o.get("datetime").getAsString());
-				report.age = mainTimestamp - report.timestamp;
+				report.initialStaleness = mainTimestamp - report.timestamp;
 				
 				syncAndSendReport(report);
 				
