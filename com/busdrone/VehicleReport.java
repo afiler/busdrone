@@ -74,9 +74,8 @@ public class VehicleReport implements Cloneable {
 		boolean retVal = (
 			this.vehicleId.equals(that.vehicleId) &&
 			this.coach.equals(that.coach) &&
-			this.routeId.equals(that.routeId) &&
 			this.route.equals(that.route) &&
-			this.tripId.equals(that.tripId) &&
+			((this.tripId == null && that.tripId == null) || this.tripId.equals(that.tripId)) &&
 			this.destination.equals(that.destination) &&
 			(Math.abs(this.lat-that.lat) < 0.00001) &&
 			(Math.abs(this.lon-that.lon) < 0.00001));

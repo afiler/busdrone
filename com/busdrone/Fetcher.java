@@ -34,7 +34,6 @@ public abstract class Fetcher extends Thread {
 				event.uid = report.uid;
 				server.reportStore.remove(key);
 				String json = event.toJson();
-				System.out.println(json);
 				server.sendToAll(json);
 			}
 			return;
