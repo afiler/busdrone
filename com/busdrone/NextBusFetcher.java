@@ -17,7 +17,7 @@ public class NextBusFetcher extends Fetcher {
 	public static String typeId = "slu";
 	Gson gson = new Gson();
 	
-	public NextBusFetcher(BusReportServer s) {
+	public NextBusFetcher(ReportServer s) {
 		super();
 		server = s;
 		sleepSecs = 4;
@@ -38,7 +38,7 @@ public class NextBusFetcher extends Fetcher {
 		for(int i=0; i<vehicles.size(); i++) {
 			try {
 				Element vehicle = (Element)vehicles.get(i);
-				BusReport report = new BusReport();
+				VehicleReport report = new VehicleReport();
 				
 				report.operator = operator;
 				report.dataProvider = dataProvider;
@@ -67,7 +67,7 @@ public class NextBusFetcher extends Fetcher {
 		        report.color = report.color + "";
 		        report.route = report.route + "";
 				
-		        this.syncAndSendReport(report);
+		        syncAndSendReport(report);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}

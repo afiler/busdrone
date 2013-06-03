@@ -40,7 +40,7 @@ public class BusViewFetcher extends Fetcher {
 	InputStream response;
 	ObjectInputStream ois;
 
-	public BusViewFetcher(BusReportServer s) {
+	public BusViewFetcher(ReportServer s) {
 		super();
 		server = s;
 	}
@@ -63,14 +63,21 @@ public class BusViewFetcher extends Fetcher {
 			busReport.lat = pout.y;
 			busReport.lon = pout.x;
 			
-			String json = JsonWriter.objectToJson(busReport);
-			//s.sendToAll(json);
-			String key = String.valueOf(busReport.coach);
-			db.set(key, json);
-			db.hset("buses", key, String.valueOf(busReport.timestamp));
+			String key = "com.busdrone.reports/com.onebusaway/1_"+busReport.coach;
+			VehicleReport oldBus = (VehicleReport)server.reportStore.get(key);
+			
+			if (oldBus == null) continue;
+			
+			double latDiff = Math.abs(oldBus.lat - pout.y);
+			double lonDiff = Math.abs(oldBus.lon - pout.x);
+						
+			if ((latDiff >= 0.00001 && latDiff < 0.01) && (lonDiff >= 0.00001 && lonDiff < 0.01)) {
+				VehicleReport newBus = (VehicleReport) oldBus.clone();
+				newBus.lat = pout.y;
+				newBus.lon = pout.x;
+				syncAndSendReport(newBus);
+			}
 		}
-		server.sendToAll(JsonWriter.objectToJson(busReports.toArray()));
-		//System.out.println("BusReport number: "+set.timestamp+" size: "+busReports.toArray().length);
 	}
 
 }

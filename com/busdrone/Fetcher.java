@@ -2,7 +2,7 @@ package com.busdrone;
 
 public abstract class Fetcher extends Thread {
 	int sleepSecs = 0;
-	BusReportServer server;
+	ReportServer server;
 
 	@Override
 	public void run() {
@@ -21,12 +21,12 @@ public abstract class Fetcher extends Thread {
 		}
 	}
 	
-	public void syncAndSendReport(BusReport report) {		
+	public void syncAndSendReport(VehicleReport report) {		
 		report.cleanup();
 
 		String key = "com.busdrone.reports/"+report.uid;
 		
-		BusReport oldBus = (BusReport)server.reportStore.get(key);
+		VehicleReport oldBus = (VehicleReport)server.reportStore.get(key);
 		
 		if (report.isDeletable()) {
 			if (oldBus != null) {

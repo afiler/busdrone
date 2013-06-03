@@ -15,7 +15,7 @@ public class OBAFetcher extends Fetcher {
 	//public static String[] agencyIds = {"1", "3", "19", "KMD", "40", "35", "23", "sch", "29"};
 	public static String[] agencyIds = {"1", "3", "19"}; //{"3", "40", "29"};
 	
-	public Hashtable<String, BusReport> busReports = new Hashtable<String, BusReport>();
+	public Hashtable<String, VehicleReport> vehicleReports = new Hashtable<String, VehicleReport>();
 	
 	public Hashtable<String, String> tripIdsRoutes = new Hashtable<String, String>();
 	public Hashtable<String, String> tripIdsRouteIds = new Hashtable<String, String>();
@@ -27,7 +27,7 @@ public class OBAFetcher extends Fetcher {
 
 	Gson gson = new Gson();
 	
-	public OBAFetcher(BusReportServer s) {
+	public OBAFetcher(ReportServer s) {
 		super();
 		server = s;
 		sleepSecs = 10; // XXX XXXXXXXX
@@ -72,7 +72,7 @@ public class OBAFetcher extends Fetcher {
 			Nodes vehicleStatuses = doc.query("//response/data/list/vehicleStatus");
 			for(int i=0; i<vehicleStatuses.size(); i++) {
 				try {
-					BusReport report = new BusReport();
+					VehicleReport report = new VehicleReport();
 					Element vehicleStatus = (Element)vehicleStatuses.get(i);
 					//System.out.println(vehicleStatus.getValue());
 					report.vehicleType = "bus";

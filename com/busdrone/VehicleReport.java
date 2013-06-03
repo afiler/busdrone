@@ -1,6 +1,6 @@
 package com.busdrone;
 
-public class BusReport {
+public class VehicleReport implements Cloneable {
 	String uid;
 	String dataProvider;
 	String operator;
@@ -62,8 +62,8 @@ public class BusReport {
 	
 	@Override public boolean equals(Object aThat) {		
 		if ( this == aThat ) return true;
-		if ( !(aThat instanceof BusReport) ) return false;
-		BusReport that = (BusReport)aThat;
+		if ( !(aThat instanceof VehicleReport) ) return false;
+		VehicleReport that = (VehicleReport)aThat;
 		
 		this.cleanup(); that.cleanup();
 		
@@ -93,4 +93,14 @@ public class BusReport {
 		} */
 		return retVal;
 	}
+	
+	public Object clone() {
+		try {
+			return super.clone();
+		}
+		catch(Exception e) {
+			return null;
+		}
+	}
+	
 }

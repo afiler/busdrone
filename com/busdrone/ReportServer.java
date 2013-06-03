@@ -16,8 +16,8 @@ import org.java_websocket.server.WebSocketServer;
 import com.busdrone.NextBusFetcher;
 import com.busdrone.BusViewFetcher;
 
-public class BusReportServer extends WebSocketServer {
-	public HashMap<String,BusReport> reportStore = new HashMap<String,BusReport>();
+public class ReportServer extends WebSocketServer {
+	public HashMap<String,VehicleReport> reportStore = new HashMap<String,VehicleReport>();
 	
 	public static void main( String[] args ) throws InterruptedException , IOException {
 		WebSocketImpl.DEBUG = false;
@@ -26,12 +26,12 @@ public class BusReportServer extends WebSocketServer {
 			port = Integer.parseInt( args[ 0 ] );
 		} catch ( Exception ex ) {
 		}
-		BusReportServer s = new BusReportServer( port );
+		ReportServer s = new ReportServer( port );
 		s.start();
 		System.out.println( "Server started on port " + s.getPort() );
 		
 		new NextBusFetcher(s).start();
-		//new BusViewFetcher(s).start();
+		new BusViewFetcher(s).start();
 		new WSFerryFetcher(s).start();
 		new OBAFetcher(s).start();
 		new Reaper(s).start();
@@ -48,11 +48,11 @@ public class BusReportServer extends WebSocketServer {
 		}
 	}
 	
-	public BusReportServer( int port ) throws UnknownHostException {
+	public ReportServer( int port ) throws UnknownHostException {
 		super( new InetSocketAddress( port ) );
 	}
 
-	public BusReportServer( InetSocketAddress address ) {
+	public ReportServer( InetSocketAddress address ) {
 		super( address );
 	}
 
@@ -68,7 +68,7 @@ public class BusReportServer extends WebSocketServer {
 		
 		Event event = new Event("init");
 		
-		for (Map.Entry<String, BusReport> entry : reportStore.entrySet()) {
+		for (Map.Entry<String, VehicleReport> entry : reportStore.entrySet()) {
 			event.addVehicle(entry.getValue());
 		}
 		

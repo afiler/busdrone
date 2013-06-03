@@ -6,8 +6,8 @@ import com.google.gson.Gson;
 
 public class Event {
 	public String type;
-	public ArrayList<BusReport> vehicles;
-	public BusReport vehicle;
+	public ArrayList<VehicleReport> vehicles;
+	public VehicleReport vehicle;
 	public String uid;
 	public String polyline;
 	
@@ -21,9 +21,9 @@ public class Event {
 		return gson.toJson(this);
 	}
 	
-	public void addVehicle(BusReport busReport) {
-		if (vehicles == null) vehicles = new ArrayList<BusReport>();
-		vehicles.add(busReport);
+	public void addVehicle(VehicleReport vehicleReport) {
+		if (vehicles == null) vehicles = new ArrayList<VehicleReport>();
+		vehicles.add(vehicleReport);
 	}
 
 }

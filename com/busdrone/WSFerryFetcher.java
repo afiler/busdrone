@@ -26,7 +26,7 @@ public class WSFerryFetcher extends Fetcher {
 
 	Gson gson = new Gson();
 	
-	public WSFerryFetcher(BusReportServer s) {
+	public WSFerryFetcher(ReportServer s) {
 		super();
 		server = s;
 		sleepSecs = 10;
@@ -47,7 +47,7 @@ public class WSFerryFetcher extends Fetcher {
 			
 			try {
 				JsonObject o = element.getAsJsonObject();
-				BusReport report = new BusReport();
+				VehicleReport report = new VehicleReport();
 				
 				report.dataProvider = dataProvider;
 				report.operator = operator;
@@ -69,7 +69,7 @@ public class WSFerryFetcher extends Fetcher {
 				report.timestamp = parseVesselDatetime(o.get("datetime").getAsString());
 				report.age = mainTimestamp - report.timestamp;
 				
-				this.syncAndSendReport(report);
+				syncAndSendReport(report);
 				
 			} catch (Exception e) {
 				
