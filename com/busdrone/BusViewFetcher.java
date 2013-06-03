@@ -45,6 +45,7 @@ public class BusViewFetcher extends Fetcher {
 		server = s;
 	}
 	
+	@SuppressWarnings("unchecked")
 	public void runOnce() throws Exception {
 		if (connection == null) {
 			connection = new URL(endpointUrl).openConnection();
@@ -71,7 +72,7 @@ public class BusViewFetcher extends Fetcher {
 			double latDiff = Math.abs(oldBus.lat - pout.y);
 			double lonDiff = Math.abs(oldBus.lon - pout.x);
 						
-			if ((latDiff >= 0.00001 && latDiff < 0.01) && (lonDiff >= 0.00001 && lonDiff < 0.01)) {
+			if ((latDiff >= 0.00001 && latDiff < 0.0025) && (lonDiff >= 0.00001 && lonDiff < 0.0025)) {
 				VehicleReport newBus = (VehicleReport) oldBus.clone();
 				newBus.lat = pout.y;
 				newBus.lon = pout.x;
