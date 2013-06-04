@@ -31,7 +31,7 @@ public abstract class Fetcher extends Thread {
 		if (report.isDeletable()) {
 			if (oldBus != null) {
 				Event event = new Event("remove_vehicle");
-				event.uid = report.uid;
+				event.vehicle_uid = report.uid;
 				server.reportStore.remove(key);
 				String json = event.toJson();
 				server.sendToAll(json);

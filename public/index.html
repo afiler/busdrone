@@ -235,7 +235,7 @@
           updateBus(vehicle);
         });
       } else if (data.type == 'remove_vehicle') {
-        busMarker = busMarkers[data.uid];
+        busMarker = busMarkers[data.vehicle_uid];
         
         if (busMarker) deleteBus(busMarker.bus);
       }
@@ -582,7 +582,7 @@
     <img src="img/busdrone-vert.png" id="logo" width="240" height="170">
     
     <div id="panes">
-      <div id="stats">
+      <div id="stats" style="display: none">
         Showing <span id="bus-count">?</span> buses/trains/ferries.
       </div>
       <div id="route-info">

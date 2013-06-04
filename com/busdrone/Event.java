@@ -8,7 +8,7 @@ public class Event {
 	public String type;
 	public ArrayList<VehicleReport> vehicles;
 	public VehicleReport vehicle;
-	public String uid;
+	public String vehicle_uid;
 	public String polyline;
 	
 	transient Gson gson = new Gson();
