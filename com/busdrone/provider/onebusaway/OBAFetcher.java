@@ -1,6 +1,10 @@
-package com.busdrone;
+package com.busdrone.provider.onebusaway;
 
 import java.util.Hashtable;
+
+import com.busdrone.Fetcher;
+import com.busdrone.ReportServer;
+import com.busdrone.VehicleReport;
 import com.google.gson.Gson;
 
 import nu.xom.Builder;
@@ -21,6 +25,7 @@ public class OBAFetcher extends Fetcher {
 	public Hashtable<String, String> tripIdsRouteIds = new Hashtable<String, String>();
 	public Hashtable<String, String> routeIdsRoutes = new Hashtable<String, String>();
 	public Hashtable<String, String> tripIdsDestinations = new Hashtable<String, String>();
+	public Hashtable<String, String> vehicleIdsTripIds = new Hashtable<String, String>();
 	
 	public int runCount = 0;
 	public int refreshReferenceInterval = 6;
@@ -90,7 +95,15 @@ public class OBAFetcher extends Fetcher {
 					report.initialStaleness = reportTimestamp - report.timestamp;
 					
 					report.inService = true;
-
+					
+					// Fix "C Line", "D Line" etc for RapidRide
+					if (report.route.endsWith(" Line")) {
+						report.route = report.route.substring(0,1);
+						report.color = "#b2df0000";
+					}
+					
+					vehicleIdsTripIds.put(report.vehicleId, report.tripId);
+					
 					syncAndSendReport(report);
 					
 				} catch (Exception e) {
@@ -99,5 +112,15 @@ public class OBAFetcher extends Fetcher {
 
 			}
 		}
+	}
+	
+	
+	public String fetchTripPolyline(String vehicleId) {
+		String tripId = vehicleIdsTripIds.get(vehicleId);
+		if (tripId == null) return null;
+		
+		
+		
+		return "";
 	}
 }

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,16 +15,21 @@ import org.java_websocket.server.WebSocketServer;
 
 import com.busdrone.NextBusFetcher;
 import com.busdrone.BusViewFetcher;
+import com.busdrone.provider.onebusaway.OBAFetcher;
+import com.busdrone.provider.onebusaway.OBAProxy;
+import com.google.gson.Gson;
 
 public class ReportServer extends WebSocketServer {
 	public Map<String,VehicleReport> reportStore = new ConcurrentHashMap<String,VehicleReport>();
+	Gson gson = new Gson();
+	static OBAProxy obaProxy = new OBAProxy();
 	
-	public static void main( String[] args ) throws InterruptedException , IOException {
+	public static void main(String[] args) throws InterruptedException , IOException {
 		WebSocketImpl.DEBUG = false;
-		int port = 28737;
+		int port = 28737; //XXX
 		try {
-			port = Integer.parseInt( args[ 0 ] );
-		} catch ( Exception ex ) {
+			port = Integer.parseInt(args[0]);
+		} catch (Exception ex) {
 		}
 		ReportServer s = new ReportServer( port );
 		s.start();
@@ -36,6 +40,8 @@ public class ReportServer extends WebSocketServer {
 		new WSFerryFetcher(s).start();
 		new OBAFetcher(s).start();
 		new Reaper(s).start();
+		
+		obaProxy.start();
 	}
 
 	public void sendToAll( String text ) {
@@ -48,7 +54,22 @@ public class ReportServer extends WebSocketServer {
 			}
 		}
 	}
-	
+
+	@Override
+	public void onMessage(WebSocket conn, String message ) {
+		System.out.println("Message: "+message);
+		Request req = gson.fromJson(message, Request.class);
+		req.setConn(conn);
+		
+		System.out.println("Req type:"+req.getType()+" Provider:"+req.getProvider()+" vehicle_uid:"+req.getTripUid());
+		
+		if (req.getProvider().equals(OBAFetcher.dataProvider)) {
+			System.out.println("Submitting request");
+			obaProxy.submitRequest(req);
+		}
+		
+	}
+
 	public ReportServer( int port ) throws UnknownHostException {
 		super( new InetSocketAddress( port ) );
 	}
@@ -57,11 +78,6 @@ public class ReportServer extends WebSocketServer {
 		super( address );
 	}
 
-	@Override
-	public void onMessage( WebSocket conn, String message ) {
-		//this.sendToAll( message );
-		//System.out.println( conn + ": " + message );
-	}
 	
 	@Override
 	public void onOpen(WebSocket conn, ClientHandshake handshake) {		
