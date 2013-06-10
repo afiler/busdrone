@@ -1,8 +1,8 @@
 package com.busdrone;
 
 public abstract class Fetcher extends Thread {
-	int sleepSecs = 0;
-	ReportServer server;
+	public int sleepSecs = 0;
+	public ReportServer server;
 
 	@Override
 	public void run() {

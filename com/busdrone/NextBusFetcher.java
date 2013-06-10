@@ -46,7 +46,10 @@ public class NextBusFetcher extends Fetcher {
 				report.coach = vehicle.getAttribute("id").getValue();
 				report.vehicleId = typeId+'_'+report.coach;
 				try {
+					// Fix 2westlake
 					report.destination = vehicle.getAttribute("dirTag").getValue();
+					report.destination = report.destination.substring(1,2).toUpperCase()+
+							report.destination.substring(2);
 				} catch (Exception e) {
 					report.destination = "?";
 				}
@@ -71,6 +74,6 @@ public class NextBusFetcher extends Fetcher {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
-		}
+		}		
 	}
 }

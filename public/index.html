@@ -238,6 +238,8 @@
         busMarker = busMarkers[data.vehicle_uid];
         
         if (busMarker) deleteBus(busMarker.bus);
+			} else if (data.type == 'trip_polyline') {
+				highlightTripCallback(data);
       }
       
       updateInfo();
@@ -412,6 +414,33 @@
       
       var key = bus.route+','+bus.vehicleId;
       if (tripLines[key]) return showLine(tripLines[key]);
+	  
+			console.log({type: "trip_polyline", vehicle_uid: bus.uid});
+	  	//websocket.send(JSON.stringify({type: "trip_polyline", vehicle_uid: bus.uid}));
+			websocket.send(JSON.stringify({type: "trip_polyline", trip_uid: bus.dataProvider+"/"+bus.tripId}));
+  	}
+		
+		function highlightTripCallback(data) {
+			// XXX: check to see if trip ID corresponds to selected vehicle
+			console.log("highlightTripCallback");
+			console.log(data);
+      var busMarker = busMarkers[highlightedBusId];
+      var bus = busMarker.bus;
+			
+      var path = google.maps.geometry.encoding.decodePath(data.polyline);
+
+      tripLines[data.trip_uid] = new google.maps.Polyline({
+            path: path,
+            strokeColor: bus.normalColor,
+            strokeOpacity: 1.0,
+            strokeWeight: 2,
+            map: map
+      });
+      
+      highlightedTripLine = tripLines[data.trip_uid];
+		}
+	
+		function oldHighlightTrip() {
       
       var tripUrl = "onebusaway/api/where/trip-for-vehicle/"+bus.vehicleId+".xml";
       

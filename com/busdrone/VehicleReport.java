@@ -3,28 +3,28 @@ package com.busdrone;
 import java.util.Date;
 
 public class VehicleReport implements Cloneable {
-	String uid;
-	String dataProvider;
-	String operator;
-	String vehicleType;
-	String vehicleId;
-	String prevStop;
-	String nextStop;
-	String coach;
-	String name;
-	String routeId;
-	String route;
-	String tripId;
-	String destination;
-	String color;
-	int speedMph;
-	int speedKmh;
-	double lat;
-	double lon;
-	double heading;
-	boolean inService = true; // XXX
-	long timestamp = java.lang.Long.MIN_VALUE;
-	long initialStaleness = java.lang.Long.MIN_VALUE;
+	public String uid;
+	public String dataProvider;
+	public String operator;
+	public String vehicleType;
+	public String vehicleId;
+	public String prevStop;
+	public String nextStop;
+	public String coach;
+	public String name;
+	public String routeId;
+	public String route;
+	public String tripId;
+	public String destination;
+	public String color;
+	public int speedMph;
+	public int speedKmh;
+	public double lat;
+	public double lon;
+	public double heading;
+	public boolean inService = true; // XXX
+	public long timestamp = java.lang.Long.MIN_VALUE;
+	public long initialStaleness = java.lang.Long.MIN_VALUE;
 	
 	public void cleanup() {
 		if (vehicleId == null) vehicleId = coach;
