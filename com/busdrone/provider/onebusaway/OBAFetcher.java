@@ -75,6 +75,7 @@ public class OBAFetcher extends Fetcher {
 		    }
 			
 			Nodes vehicleStatuses = doc.query("//response/data/list/vehicleStatus");
+			System.out.println(endpointUrl+": "+trips.size()+" statuses");
 			for(int i=0; i<vehicleStatuses.size(); i++) {
 				try {
 					VehicleReport report = new VehicleReport();

@@ -26,7 +26,7 @@ public class ReportServer extends WebSocketServer {
 	
 	public static void main(String[] args) throws InterruptedException , IOException {
 		WebSocketImpl.DEBUG = false;
-		int port = 28737; //XXX
+		int port = 28737;
 		try {
 			port = Integer.parseInt(args[0]);
 		} catch (Exception ex) {
@@ -61,11 +61,15 @@ public class ReportServer extends WebSocketServer {
 		Request req = gson.fromJson(message, Request.class);
 		req.setConn(conn);
 		
-		System.out.println("Req type:"+req.getType()+" Provider:"+req.getProvider()+" vehicle_uid:"+req.getTripUid());
+		System.out.println("Req type:"+req.getType());
 		
-		if (req.getProvider().equals(OBAFetcher.dataProvider)) {
-			System.out.println("Submitting request");
-			obaProxy.submitRequest(req);
+		if (req.getType() == "polyline") {
+			if (req.getProvider().equals(OBAFetcher.dataProvider)) {
+				System.out.println("Submitting request");
+				obaProxy.submitRequest(req);
+			}
+		} else if (req.getType() == "location") {
+			
 		}
 		
 	}

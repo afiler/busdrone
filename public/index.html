@@ -246,6 +246,7 @@
     }
     
     function updateBus(bus) {
+			console.log(bus);
       if (bus.lat > 89 || bus.lat < -89 || !bus.route || bus.route == 'null' ||
           getFreshness(bus) == 'dead' ) {
         deleteBus(bus);
@@ -336,6 +337,8 @@
     
     function getFreshness(bus) {
       var ageMins = (new Date() - bus.timestamp) / 1000 / 60;
+			console.log(bus);
+			console.log(ageMins+" mins old");
       if (ageMins > 5)
         return 'dead';
       else if (ageMins > 3)

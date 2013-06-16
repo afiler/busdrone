@@ -59,9 +59,14 @@ public class WSFerryFetcher extends Fetcher {
 				report.vehicleId = "40_"+report.coach;
 				report.name = o.get("name").getAsString();
 				report.route = o.get("route").getAsString();
+				report.destination = o.get("aterm").getAsString();
+				if (report.route.equals("")) {
+					for (String word : report.destination.split(" ")) {
+						report.route = report.route + word.substring(0,1);
+					}
+				}
 				report.prevStop = o.get("lastdock").getAsString();
 				report.nextStop = o.get("aterm").getAsString();
-				report.destination = o.get("aterm").getAsString();
 				report.lat = o.get("lat").getAsDouble();
 				report.lon = o.get("lon").getAsDouble();
 				report.speedMph = o.get("speed").getAsInt();

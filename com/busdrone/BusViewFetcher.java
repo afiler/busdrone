@@ -23,8 +23,10 @@ import com.busdrone.Fetcher;
 import com.cedarsoftware.util.io.JsonWriter;
 
 public class BusViewFetcher extends Fetcher {
+	public boolean REQUIRE_OBA_AGREEMENT = false;
 	public static String endpointUrl = "http://trolley.its.washington.edu/applet/AvlServer";
-	public JedisPool jedisPool = new JedisPool(new JedisPoolConfig(), "localhost");
+	public static String dataProvider = "org.busview";
+	public static String operator = "gov.kingcounty.metro";
 	
 	static final String WGS84_PARAM = "+title=long/lat:WGS84 +proj=longlat +datum=WGS84 +units=degrees";
 	static final String WA_N_PARAM = "+proj=lcc +lat_1=48.73333333333333 +lat_2=47.5 +lat_0=47 +lon_0=-120.8333333333333 +x_0=500000.0001016001 +y_0=0 +ellps=GRS80 +datum=NAD83 +to_meter=0.3048006096012192 +no_defs";
@@ -64,19 +66,37 @@ public class BusViewFetcher extends Fetcher {
 			busReport.lat = pout.y;
 			busReport.lon = pout.x;
 			
-			String key = "com.busdrone.reports/com.onebusaway/1_"+busReport.coach;
-			VehicleReport oldBus = (VehicleReport)server.reportStore.get(key);
-			
-			if (oldBus == null) continue;
-			
-			double latDiff = Math.abs(oldBus.lat - pout.y);
-			double lonDiff = Math.abs(oldBus.lon - pout.x);
-						
-			if ((latDiff >= 0.00001 && latDiff < 0.0025) && (lonDiff >= 0.00001 && lonDiff < 0.0025)) {
-				VehicleReport newBus = (VehicleReport) oldBus.clone();
-				newBus.lat = pout.y;
-				newBus.lon = pout.x;
-				syncAndSendReport(newBus);
+			if (REQUIRE_OBA_AGREEMENT) {	
+				String key = "com.busdrone.reports/com.onebusaway/1_"+busReport.coach;
+				VehicleReport oldBus = (VehicleReport)server.reportStore.get(key);
+				
+				if (oldBus == null) continue;
+				
+				double latDiff = Math.abs(oldBus.lat - pout.y);
+				double lonDiff = Math.abs(oldBus.lon - pout.x);
+							
+				if ((latDiff >= 0.00001 && latDiff < 0.0025) && (lonDiff >= 0.00001 && lonDiff < 0.0025)) {
+					VehicleReport newBus = (VehicleReport) oldBus.clone();
+					newBus.lat = pout.y;
+					newBus.lon = pout.x;
+					syncAndSendReport(newBus);
+				}
+			} else {
+				VehicleReport report = new VehicleReport();
+				
+				report.vehicleType = "bus";
+				report.color = "#b24040ff";
+				report.dataProvider = dataProvider;
+				report.vehicleId = "1x_"+busReport.coach;
+				report.route = ""+busReport.route;
+				//report.destination = busReport.dest;
+				report.lat = busReport.lat;
+				report.lon = busReport.lon;
+				report.heading = busReport.heading;
+				report.timestamp = busReport.timestamp;
+				report.initialStaleness = set.timestamp - report.timestamp;
+				
+				syncAndSendReport(report);
 			}
 		}
 	}

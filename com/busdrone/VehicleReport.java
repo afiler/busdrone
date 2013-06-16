@@ -76,7 +76,7 @@ public class VehicleReport implements Cloneable {
 			this.coach.equals(that.coach) &&
 			this.route.equals(that.route) &&
 			((this.tripId == null && that.tripId == null) || this.tripId.equals(that.tripId)) &&
-			this.destination.equals(that.destination) &&
+			(this.destination == null ? "" : this.destination).equals(that.destination == null ? "" : that.destination) &&
 			(Math.abs(this.lat-that.lat) < 0.00001) &&
 			(Math.abs(this.lon-that.lon) < 0.00001));
 
