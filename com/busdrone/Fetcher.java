@@ -21,10 +21,15 @@ public abstract class Fetcher extends Thread {
 		}
 	}
 	
-	public void syncAndSendReport(VehicleReport report) {		
+	public void syncAndSendReport(VehicleReport report) {
+		syncAndSendReport(report, false);
+	}
+	
+	public void syncAndSendReport(VehicleReport report, boolean force) {		
 		report.cleanup();
 
-		String key = "com.busdrone.reports/"+report.uid;
+		//String key = "com.busdrone.reports/"+report.uid;
+		String key = report.uid;
 		
 		VehicleReport oldBus = (VehicleReport)server.reportStore.get(key);
 		
@@ -39,7 +44,7 @@ public abstract class Fetcher extends Thread {
 			return;
 		}
 				
-		if (oldBus == null || !oldBus.equals(report)) {
+		if (force || oldBus == null || !oldBus.equals(report)) {
 			server.reportStore.put(key, report);
 			//server.sendToAll(report.toEventJson());
 			String json = report.toEventJson();

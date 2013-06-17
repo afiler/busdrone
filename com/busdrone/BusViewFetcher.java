@@ -23,7 +23,7 @@ import com.busdrone.Fetcher;
 import com.cedarsoftware.util.io.JsonWriter;
 
 public class BusViewFetcher extends Fetcher {
-	public boolean REQUIRE_OBA_AGREEMENT = false;
+	public boolean REQUIRE_OBA_AGREEMENT = true;
 	public static String endpointUrl = "http://trolley.its.washington.edu/applet/AvlServer";
 	public static String dataProvider = "org.busview";
 	public static String operator = "gov.kingcounty.metro";
@@ -60,6 +60,8 @@ public class BusViewFetcher extends Fetcher {
 		BusReportSet set = (BusReportSet) o;
 		Vector<BusReport> busReports = set.array();
 		if (busReports == null) return;
+		
+		//System.out.println("Got "+busReports.size()+" BusView reports.");
 
 		for (BusReport busReport : busReports) {
 			trans.transform(new ProjCoordinate(busReport.x, busReport.y), pout);
@@ -67,7 +69,8 @@ public class BusViewFetcher extends Fetcher {
 			busReport.lon = pout.x;
 			
 			if (REQUIRE_OBA_AGREEMENT) {	
-				String key = "com.busdrone.reports/com.onebusaway/1_"+busReport.coach;
+				//String key = "com.busdrone.reports/com.onebusaway/1_"+busReport.coach;
+				String key = "com.onebusaway/1_"+busReport.coach;
 				VehicleReport oldBus = (VehicleReport)server.reportStore.get(key);
 				
 				if (oldBus == null) continue;
@@ -96,7 +99,7 @@ public class BusViewFetcher extends Fetcher {
 				report.timestamp = busReport.timestamp;
 				report.initialStaleness = set.timestamp - report.timestamp;
 				
-				syncAndSendReport(report);
+				syncAndSendReport(report, true);
 			}
 		}
 	}

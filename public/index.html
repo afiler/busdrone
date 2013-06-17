@@ -144,7 +144,7 @@
   </style>
   <script src="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=geometry&sensor=true"></script>
   <script>
-    var wsUri = "ws://"+(document.location.hostname||"localhost")+":28737/";
+    var wsUri = "ws://"+(document.location.hostname||"localhost")+":28739/";
     var busMarkers = {};
     var tripLines = {};
     var map;
@@ -246,12 +246,12 @@
     }
     
     function updateBus(bus) {
-			console.log(bus);
+			//console.log(bus.route);
       if (bus.lat > 89 || bus.lat < -89 || !bus.route || bus.route == 'null' ||
           getFreshness(bus) == 'dead' ) {
         deleteBus(bus);
         return;
-      }      
+      }
       
       //bus.age = bus.age || (new Date() - bus.timestamp);
       
@@ -337,8 +337,6 @@
     
     function getFreshness(bus) {
       var ageMins = (new Date() - bus.timestamp) / 1000 / 60;
-			console.log(bus);
-			console.log(ageMins+" mins old");
       if (ageMins > 5)
         return 'dead';
       else if (ageMins > 3)

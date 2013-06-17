@@ -26,7 +26,7 @@ public class ReportServer extends WebSocketServer {
 	
 	public static void main(String[] args) throws InterruptedException , IOException {
 		WebSocketImpl.DEBUG = false;
-		int port = 28737;
+		int port = 28739;
 		try {
 			port = Integer.parseInt(args[0]);
 		} catch (Exception ex) {

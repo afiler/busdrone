@@ -75,40 +75,56 @@ public class OBAFetcher extends Fetcher {
 		    }
 			
 			Nodes vehicleStatuses = doc.query("//response/data/list/vehicleStatus");
-			System.out.println(endpointUrl+": "+trips.size()+" statuses");
+			//System.out.println(endpointUrl+": "+vehicleStatuses.size()+" statuses");
 			for(int i=0; i<vehicleStatuses.size(); i++) {
 				try {
 					VehicleReport report = new VehicleReport();
 					Element vehicleStatus = (Element)vehicleStatuses.get(i);
 					//System.out.println(vehicleStatus.getValue());
 					report.vehicleType = "bus";
-					report.color = "#b27094ff";
 					report.dataProvider = dataProvider;
 					report.vehicleId = vehicleStatus.query("vehicleId").get(0).getValue();
-					report.tripId = vehicleStatus.query("tripId").get(0).getValue();
-					report.routeId = tripIdsRouteIds.get(report.tripId)+"";
-					report.route = routeIdsRoutes.get(report.routeId)+"";
-					report.destination = tripIdsDestinations.get(report.tripId)+"";
 					report.lat = Double.parseDouble(vehicleStatus.query("location/lat").get(0).getValue());
 					report.lon = Double.parseDouble(vehicleStatus.query("location/lon").get(0).getValue());
-					report.heading = Double.parseDouble(vehicleStatus.query("tripStatus/orientation").get(0).getValue());
 					report.timestamp = Long.parseLong(vehicleStatus.query("lastUpdateTime").get(0).getValue());
 					report.initialStaleness = reportTimestamp - report.timestamp;
+
+					Nodes tripId = vehicleStatus.query("tripId");
 					
-					report.inService = true;
+					if (tripId.size() > 0) {
+						report.tripId = vehicleStatus.query("tripId").get(0).getValue();
+						report.routeId = tripIdsRouteIds.get(report.tripId)+"";
+						report.route = routeIdsRoutes.get(report.routeId)+"";
+						report.destination = tripIdsDestinations.get(report.tripId)+"";
+						report.heading = Double.parseDouble(vehicleStatus.query("tripStatus/orientation").get(0).getValue());
+						report.color = "#b27094ff";
+						
+						report.inService = true;
 					
-					// Fix "C Line", "D Line" etc for RapidRide
-					if (report.route.endsWith(" Line")) {
-						report.route = report.route.substring(0,1);
-						report.color = "#b2df0000";
-					}
+						// Fix "C Line", "D Line" etc for RapidRide
+						if (report.route.endsWith(" Line")) {
+							report.route = report.route.substring(0,1);
+							report.color = "#b2df0000";
+						}
+						
+						vehicleIdsTripIds.put(report.vehicleId, report.tripId);
+						
+						syncAndSendReport(report);
+					} /*else {
+						report.color = "#b2707070";
+						report.route = report.vehicleId.split("_")[1];
+						report.inService = true;
+						report.timestamp = reportTimestamp;
+						report.initialStaleness = 0;
+						
+						syncAndSendReport(report, true);
+					} */
 					
-					vehicleIdsTripIds.put(report.vehicleId, report.tripId);
 					
-					syncAndSendReport(report);
 					
 				} catch (Exception e) {
 					//System.out.println(vehicleStatuses.get(i));
+					//e.printStackTrace();
 				}
 
 			}

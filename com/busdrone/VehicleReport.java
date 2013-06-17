@@ -58,7 +58,7 @@ public class VehicleReport implements Cloneable {
 					" Math.abs(lat) > 89:"+(Math.abs(lat) > 89)+
 					" Math.abs(lon) > 179:"+(Math.abs(lon) > 179) +
 					" !inService:"+!inService+
-					" age >= 1000*60*10:"+(age >= 1000*60*10));
+					" age >= 1000*60*10:"+(currentAge >= 1000*60*10));
 		}*/
 		
 		return retval;
