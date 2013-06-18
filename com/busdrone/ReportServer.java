@@ -61,9 +61,9 @@ public class ReportServer extends WebSocketServer {
 		Request req = gson.fromJson(message, Request.class);
 		req.setConn(conn);
 		
-		System.out.println("Req type:"+req.getType());
+		System.out.println("Req type: Ç"+req.getType()+"È");
 		
-		if (req.getType() == "polyline") {
+		if (req.getType().equals("trip_polyline")) {
 			if (req.getProvider().equals(OBAFetcher.dataProvider)) {
 				System.out.println("Submitting request");
 				obaProxy.submitRequest(req);
