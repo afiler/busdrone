@@ -17,7 +17,7 @@ public class OBAFetcher extends Fetcher {
 	
 	public static String endpointUrlFmt = "http://api.onebusaway.org/api/where/vehicles-for-agency/%s.xml?key=TEST%s";
 	//public static String[] agencyIds = {"1", "3", "19", "KMD", "40", "35", "23", "sch", "29"};
-	public static String[] agencyIds = {"1", "3", "19"}; //{"3", "40", "29"};
+	public static String[] agencyIds = {"1", "3", "19", "40"}; //{"3", "29"};
 	
 	public Hashtable<String, VehicleReport> vehicleReports = new Hashtable<String, VehicleReport>();
 	
