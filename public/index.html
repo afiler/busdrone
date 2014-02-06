@@ -17,6 +17,7 @@
   
   <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
   <script src="bootstrap/js/bootstrap.min.js"></script>
+  <script src="js/modernizr.custom.18049.js"></script>
   
   <title>busdrone</title>
   <style>
@@ -168,6 +169,9 @@
         $('#panel').animate({left:'-260px', queue: false}, 200);
         $('#map-holder').animate({left:'0px'}, 200);
         $('#show-button').show(200);
+        if (Modernizr.localstorage) {
+          localStorage.setItem('panel-visible', 'false');
+        }
       });
       
       $('#show-button').click(function() {
@@ -175,6 +179,9 @@
         $('#hide-button').show();
         $('#panel').animate({left:'0px', queue: false}, 200);
         $('#map-holder').animate({left:'260px'}, 200);
+        if (Modernizr.localstorage) {
+          localStorage.setItem('panel-visible', 'true');
+        }
       });
       
       $('#route-info').hide();
@@ -188,6 +195,17 @@
       map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
       
       google.maps.event.addListenerOnce(map, 'tilesloaded', onMapReady);
+      if (Modernizr.localstorage) {
+        if (localStorage.getItem('panel-visible') == 'false') {
+           $('#hide-button').trigger('click');
+        }
+      }
+      var a = location.hash.indexOf('{'), b = location.hash.indexOf('}');
+
+      if (a != -1 || b != -1 && a < b) {
+        var parts = location.hash.substring(a+1, b).split(',');
+        goTo(parseFloat(parts[0]), parseFloat(parts[1]), parseFloat(parts[2]));
+      }
     }
     
     function debug(val) {
@@ -251,6 +269,13 @@
           getFreshness(bus) == 'dead' ) {
         deleteBus(bus);
         return;
+      }
+
+      if (location.hash != "") {    
+        var a = location.hash.indexOf('{'), b = location.hash.indexOf('}');
+        if (location.hash.length > b+1 && location.hash.substring(b + 2, location.hash.length).split(',').indexOf(bus.route) == -1) {
+          return;
+        }
       }
       
       //bus.age = bus.age || (new Date() - bus.timestamp);
